@@ -19,12 +19,15 @@ const VARIANTS: Record<Variant, { container: ViewStyle; label: ColorToken }> = {
 export type ButtonProps = Omit<PressableProps, 'style' | 'children'> & {
   label: string;
   variant?: Variant;
-  size?: 'md' | 'sm';
+  /** `lg` (default) 52 · `md` 44, e.g. next to a text field · `sm` 36, compact pills. */
+  size?: 'lg' | 'md' | 'sm';
   icon?: LucideIcon;
   style?: StyleProp<ViewStyle>;
 };
 
-export function Button({ label, variant = 'primary', size = 'md', icon: Icon, style, disabled, ...props }: ButtonProps) {
+const HEIGHTS = { lg: sizes.controlHeight, md: sizes.minTouch, sm: sizes.controlHeightSmall } as const;
+
+export function Button({ label, variant = 'primary', size = 'lg', icon: Icon, style, disabled, ...props }: ButtonProps) {
   const { container, label: labelColor } = VARIANTS[variant];
   const small = size === 'sm';
   // Small pills stay visually compact but keep the 44pt minimum touch target.
@@ -38,8 +41,8 @@ export function Button({ label, variant = 'primary', size = 'md', icon: Icon, st
       hitSlop={hitSlop}
       style={({ pressed }) => [
         styles.base,
-        { height: small ? sizes.controlHeightSmall : sizes.controlHeight },
-        { paddingHorizontal: small ? space[4] : space[6] },
+        { height: HEIGHTS[size] },
+        { paddingHorizontal: size === 'lg' ? space[6] : space[4] },
         container,
         variant === 'link' && styles.link,
         pressed && styles.pressed,

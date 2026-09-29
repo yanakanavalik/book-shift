@@ -1,22 +1,27 @@
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 
+import type { StreakDay } from '@/lib/streak';
 import { colors, radius, space } from '@/theme';
 
-export type StreakDay = 'read' | 'missed' | 'today' | 'future';
+export type { StreakDay };
 
-// Coffee = read, steel = missed, cinnamon ring = today, outline = future.
-const DAY_STYLES: Record<StreakDay, ViewStyle> = {
-  read: { backgroundColor: colors.text },
-  missed: { backgroundColor: colors.steel },
-  today: { borderWidth: 2, borderColor: colors.accent },
-  future: { borderWidth: 1, borderColor: colors.track },
+// Steel = read, tangerine = missed, dark steel ring = today, outline = future.
+export const STREAK_DAY_STYLES: Record<StreakDay, ViewStyle> = {
+  read: { backgroundColor: colors.streakRead },
+  missed: { backgroundColor: colors.streakMissed },
+  today: { borderWidth: 2, borderColor: colors.streakToday },
+  todayRead: { backgroundColor: colors.streakRead, borderWidth: 2, borderColor: colors.streakToday },
+  future: { borderWidth: 1, borderColor: colors.streakFuture },
+  empty: { borderWidth: 1, borderColor: colors.streakFuture },
 };
 
-const DAY_LABELS: Record<StreakDay, string> = {
+export const STREAK_DAY_LABELS: Record<StreakDay, string> = {
   read: 'read',
   missed: 'missed',
-  today: 'today',
+  today: 'today, not read yet',
+  todayRead: 'today, read',
   future: 'upcoming',
+  empty: 'no activity',
 };
 
 export function StreakDots({ days, size = 12 }: { days: StreakDay[]; size?: number }) {
@@ -24,10 +29,10 @@ export function StreakDots({ days, size = 12 }: { days: StreakDay[]; size?: numb
     <View
       style={styles.row}
       accessible
-      accessibilityLabel={`Reading streak: ${days.map((day) => DAY_LABELS[day]).join(', ')}`}
+      accessibilityLabel={`Reading streak: ${days.map((day) => STREAK_DAY_LABELS[day]).join(', ')}`}
     >
       {days.map((day, index) => (
-        <View key={index} style={[styles.dot, { width: size, height: size }, DAY_STYLES[day]]} />
+        <View key={index} style={[styles.dot, { width: size, height: size }, STREAK_DAY_STYLES[day]]} />
       ))}
     </View>
   );

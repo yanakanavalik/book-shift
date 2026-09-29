@@ -41,11 +41,14 @@ src/
     (tabs)/         # Native tab bar (Liquid Glass on iOS, Material on Android): Home and My books
     add.tsx         # Add-book modal
     book/[id].tsx   # Book detail: update current page, finish, delete
+    goal.tsx        # Yearly goal editor sheet
     welcome.tsx     # First-launch welcome screen
   components/
-    home/           # Home screen cards (empty shelf, yearly goal, streak)
-    ui/             # Design-system primitives: Text, Button, IconButton, Card, TextField, ProgressBar, StreakDots
-  lib/              # Pure logic (book model, progress helpers)
+    add/            # Add-a-book sheet parts: Open Library search, manual entry
+    home/           # Home screen cards: empty state, goal and streak summaries, goal editor
+    ui/             # Design-system primitives: Text, Button, IconButton, Card, Chip, SegmentedControl,
+                    # TextField, BookCover, ProgressBar, StreakDots
+  lib/              # Pure logic (book model, goals, dates) and the Open Library client
   store/            # Providers persisted to AsyncStorage (books, goals, onboarding)
   theme/            # Design tokens: colors, typography (Archivo), spacing, radius, sizes
 ```
@@ -54,7 +57,7 @@ src/
 
 All colors, fonts and sizes live in `src/theme/` — screens never hard-code them.
 
-- **Colors:** use the semantic `colors` (`bg`, `surface`, `text`, `accent`, …), not the raw `palette`. Labels on cinnamon use `onAccent` (Dark Coffee) for contrast.
+- **Colors:** use the semantic `colors` (`bg`, `surface`, `text`, `accent`, `selected`, …), not the raw `palette`. Two accents, two jobs: cinnamon (`accent`) for actions and book progress; Cool Steel (`selected`, `streak*`) for selection, time and streaks. Labels on cinnamon use `onAccent` and on steel `onSelected` — both Dark Coffee, for contrast.
 - **Type:** render text with `<Text variant="bookTitle" color="textMuted">` from `@/components/ui`; variants match the type scale (`stat`, `screenTitle`, `sheetTitle`, `bookTitle`, `body`, `label`, `secondary`, `kicker`).
 - **Controls:** use `<Button variant="primary | dark | outline | link">`. Cinnamon `primary` is for the one main action on a screen.
 - **Icons:** [Lucide](https://lucide.dev), `sizes.icon` / `sizes.iconSmall` with `sizes.iconStroke`.

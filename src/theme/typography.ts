@@ -31,6 +31,8 @@ export const typography = {
   label: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 20 },
   /** 13 / 400 — metadata, helper text. */
   secondary: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },
+  /** 13 / 600 — emphasized metadata, e.g. "Suggested", "18 behind pace". */
+  secondaryStrong: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18 },
   /** 11 / 600 caps — section kickers. */
   kicker: {
     fontFamily: fonts.semibold,

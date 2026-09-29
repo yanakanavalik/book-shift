@@ -1,7 +1,14 @@
+export { BookCover, type BookCoverProps } from './BookCover';
 export { Button, type ButtonProps } from './Button';
 export { Card, Divider, type CardProps } from './Card';
+export { Chip, type ChipProps } from './Chip';
+export { GoalDots } from './GoalDots';
 export { IconButton, type IconButtonProps } from './IconButton';
+export { LinkButton } from './LinkButton';
 export { ProgressBar } from './ProgressBar';
+export { SegmentedControl, type SegmentedControlProps } from './SegmentedControl';
+export { StatusBadge } from './StatusBadge';
+export { StreakCalendar } from './StreakCalendar';
 export { StreakDots, type StreakDay } from './StreakDots';
 export { Text, type TextProps } from './Text';
 export { TextField, type TextFieldProps } from './TextField';

@@ -1,12 +1,15 @@
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { BookCard } from '@/components/BookCard';
+import { CurrentlyReadingCard } from '@/components/home/CurrentlyReadingCard';
 import { EmptyShelfCard } from '@/components/home/EmptyShelfCard';
-import { GoalCard } from '@/components/home/GoalCard';
+import { GoalEditorCard } from '@/components/home/GoalEditorCard';
+import { GoalSummaryCard } from '@/components/home/GoalSummaryCard';
+import { StartReadingCard } from '@/components/home/StartReadingCard';
 import { StreakCard } from '@/components/home/StreakCard';
+import { StreakSummaryCard } from '@/components/home/StreakSummaryCard';
 import { useTabScreenPadding } from '@/components/tabScreen';
-import { Button, Card, Text } from '@/components/ui';
+import { LinkButton, Text } from '@/components/ui';
 import { bookStatus } from '@/lib/books';
 import { formatLongDate, greeting } from '@/lib/dates';
 import { space } from '@/theme';
@@ -16,10 +19,9 @@ export default function HomeScreen() {
   const padding = useTabScreenPadding();
   const { books } = useBooks();
   const now = new Date();
-  const reading = books.filter((book) => bookStatus(book) === 'reading');
 
   return (
-    <ScrollView contentContainerStyle={[styles.content, padding]}>
+    <ScrollView contentContainerStyle={[styles.content, padding]} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <Text variant="kicker" color="accentText">
           {formatLongDate(now)}
@@ -30,27 +32,45 @@ export default function HomeScreen() {
       </View>
 
       {books.length === 0 ? (
-        <EmptyShelfCard />
+        <>
+          <EmptyShelfCard />
+          <GoalEditorCard year={now.getFullYear()} />
+          <StreakCard />
+        </>
       ) : (
-        // Placeholder until the populated Home design lands.
-        <View style={styles.section}>
-          <Text variant="kicker" color="accentText">
-            Currently reading
-          </Text>
-          {reading.length > 0 ? (
-            reading.map((book) => <BookCard key={book.id} book={book} />)
-          ) : (
-            <Card>
-              <Text color="textMuted">Nothing in progress. Pick your next book from your shelf.</Text>
-              <Button label="Go to My books" variant="outline" size="sm" onPress={() => router.push('/books')} />
-            </Card>
-          )}
-        </View>
+        <>
+          <CurrentlyReading />
+          <View style={styles.statsRow}>
+            <GoalSummaryCard year={now.getFullYear()} />
+            <StreakSummaryCard now={now} />
+          </View>
+          <LinkButton label={`All my books · ${books.length}`} onPress={() => router.navigate('/books')} />
+        </>
       )}
-
-      <GoalCard year={now.getFullYear()} />
-      <StreakCard />
     </ScrollView>
+  );
+}
+
+function CurrentlyReading() {
+  const { books } = useBooks();
+  const reading = books
+    .filter((book) => bookStatus(book) === 'reading')
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text variant="kicker">Currently reading</Text>
+        <Text variant="kicker" accessibilityLabel={`${reading.length} books`}>
+          {String(reading.length).padStart(2, '0')}
+        </Text>
+      </View>
+      {reading.length > 0 ? (
+        reading.map((book) => <CurrentlyReadingCard key={book.id} book={book} />)
+      ) : (
+        <StartReadingCard />
+      )}
+    </View>
   );
 }
 
@@ -64,6 +84,17 @@ const styles = StyleSheet.create({
     marginBottom: space[1],
   },
   section: {
+    gap: space[3],
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: space[2],
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
     gap: space[3],
   },
 });

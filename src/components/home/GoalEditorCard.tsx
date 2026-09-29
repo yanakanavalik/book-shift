@@ -3,10 +3,11 @@ import { StyleSheet, View } from 'react-native';
 
 import { Card, IconButton, Text } from '@/components/ui';
 import { goalPace, MAX_GOAL, MIN_GOAL } from '@/lib/goals';
-import { fonts, space } from '@/theme';
+import { space } from '@/theme';
 import { useGoals } from '@/store/goals';
 
-export function GoalCard({ year }: { year: number }) {
+/** Goal with −/+ steppers; used on the empty Home screen and the goal sheet. */
+export function GoalEditorCard({ year }: { year: number }) {
   const { goalFor, setGoal } = useGoals();
   const { value, suggested } = goalFor(year);
 
@@ -15,7 +16,7 @@ export function GoalCard({ year }: { year: number }) {
       <View style={styles.header}>
         <Text variant="kicker">{year} goal</Text>
         {suggested ? (
-          <Text variant="secondary" color="accentText" style={styles.suggested}>
+          <Text variant="secondaryStrong" color="accentText">
             Suggested
           </Text>
         ) : null}
@@ -57,9 +58,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  suggested: {
-    fontFamily: fonts.semibold,
   },
   stepper: {
     flexDirection: 'row',

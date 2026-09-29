@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     height: sizes.minTouch,
     borderRadius: radius.circle,
     borderWidth: 1,
-    borderColor: colors.outline,
+    borderColor: colors.outlineSubtle,
     alignItems: 'center',
     justifyContent: 'center',
   },

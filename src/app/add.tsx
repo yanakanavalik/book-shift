@@ -1,68 +1,146 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, TextField } from '@/components/ui';
-import { space } from '@/theme';
+import { CatalogSearch } from '@/components/add/CatalogSearch';
+import { EMPTY_DRAFT, ManualEntry, type ManualDraft } from '@/components/add/ManualEntry';
+import { Button, Chip, SegmentedControl, Text } from '@/components/ui';
+import type { BookStatus } from '@/lib/books';
+import type { CatalogBook } from '@/lib/openLibrary';
+import { colors, radius, space } from '@/theme';
 import { useBooks } from '@/store/books';
 
+type Mode = 'search' | 'manual';
+
+const MODES = [
+  { value: 'search', label: 'Search catalog' },
+  { value: 'manual', label: 'Enter manually' },
+] as const;
+
+const STATUSES: { value: BookStatus; label: string }[] = [
+  { value: 'want-to-read', label: 'To read' },
+  { value: 'reading', label: 'Reading' },
+  { value: 'finished', label: 'Read' },
+];
+
+// iOS presents this screen as a page sheet over the previous screen; Android shows it full screen.
+const IS_SHEET = Platform.OS === 'ios';
+
 export default function AddBookScreen() {
-  const { addBook } = useBooks();
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [pages, setPages] = useState('');
+  const { books, addBook } = useBooks();
+  const [mode, setMode] = useState<Mode>('search');
+  const [status, setStatus] = useState<BookStatus>('want-to-read');
+  const [draft, setDraft] = useState<ManualDraft>(EMPTY_DRAFT);
+  // Bumped to remount the manual form when a catalog pick pre-fills it.
+  const [draftVersion, setDraftVersion] = useState(0);
 
-  const totalPages = Number.parseInt(pages, 10);
-  const canSave = title.trim().length > 0 && Number.isFinite(totalPages) && totalPages > 0;
+  const isAdded = (book: CatalogBook) => books.some((b) => b.openLibraryKey === book.key);
 
-  const save = () => {
-    if (!canSave) return;
-    addBook({ title, author, totalPages });
-    router.back();
+  const addFromCatalog = (book: CatalogBook) => {
+    if (book.pages) {
+      addBook({
+        title: book.title,
+        author: book.author,
+        totalPages: book.pages,
+        status,
+        coverUrl: book.coverUrl,
+        openLibraryKey: book.key,
+      });
+      return;
+    }
+    // Progress needs a page count; Open Library doesn't have one for every book.
+    setDraft({
+      title: book.title,
+      author: book.author,
+      pages: '',
+      coverUrl: book.coverUrl,
+      openLibraryKey: book.key,
+      note: 'The catalog doesn’t list a page count for this book. Add it to track progress.',
+    });
+    setDraftVersion((v) => v + 1);
+    setMode('manual');
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <TextField
-          label="Title"
-          value={title}
-          onChangeText={setTitle}
-          placeholder="e.g. The Salt Road"
-          autoFocus
-          returnKeyType="next"
-        />
-        <TextField
-          label="Author"
-          value={author}
-          onChangeText={setAuthor}
-          placeholder="Optional"
-          returnKeyType="next"
-        />
-        <TextField
-          label="Total pages"
-          value={pages}
-          onChangeText={(text) => setPages(text.replace(/[^0-9]/g, ''))}
-          placeholder="e.g. 340"
-          keyboardType="number-pad"
-          returnKeyType="done"
-          onSubmitEditing={save}
-        />
-        <Button label="Add a book" onPress={save} disabled={!canSave} style={styles.submit} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    // SafeAreaView measures its own native view: no top inset inside a sheet, status bar inset when full screen.
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {IS_SHEET ? <View style={styles.grabber} /> : null}
+
+        <View style={styles.header}>
+          <Text variant="sheetTitle" accessibilityRole="header">
+            Add a book
+          </Text>
+          <Button label="Cancel" variant="outline" size="sm" onPress={() => router.back()} />
+        </View>
+
+        <SegmentedControl options={MODES} value={mode} onChange={setMode} />
+
+        <View style={styles.statusRow} accessibilityRole="radiogroup" accessibilityLabel="Add to">
+          <Text variant="secondary" color="textMuted">
+            Add to
+          </Text>
+          {STATUSES.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={status === option.value}
+              onPress={() => setStatus(option.value)}
+            />
+          ))}
+        </View>
+
+        <View style={styles.body}>
+          {mode === 'search' ? (
+            <CatalogSearch isAdded={isAdded} onAdd={addFromCatalog} />
+          ) : (
+            <ManualEntry
+              key={draftVersion}
+              initialDraft={draft}
+              onSubmit={(book) => {
+                addBook({ ...book, status });
+                router.back();
+              }}
+            />
+          )}
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
+  safeArea: {
     flex: 1,
+    backgroundColor: colors.bg,
   },
-  form: {
-    padding: space[4],
-    gap: space[4],
+  screen: {
+    flex: 1,
+    paddingTop: space[2],
+    paddingHorizontal: space[4],
+    gap: space[3],
   },
-  submit: {
+  grabber: {
+    alignSelf: 'center',
+    width: 40,
+    height: 5,
+    borderRadius: radius.pill,
+    backgroundColor: colors.track,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: space[2],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+  },
+  body: {
+    flex: 1,
+    marginTop: space[1],
   },
 });

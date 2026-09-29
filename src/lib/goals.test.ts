@@ -1,5 +1,5 @@
 import { greeting } from './dates';
-import { clampGoal, goalPace } from './goals';
+import { booksFinishedIn, clampGoal, goalPace } from './goals';
 
 describe('clampGoal', () => {
   it('keeps goals within 1..365 whole books', () => {
@@ -29,5 +29,16 @@ describe('greeting', () => {
     expect(greeting(at(14))).toBe('Good afternoon');
     expect(greeting(at(20))).toBe('Good evening');
     expect(greeting(at(2))).toBe('Good evening');
+  });
+});
+
+describe('booksFinishedIn', () => {
+  it('counts only books finished in the year', () => {
+    const books = [
+      { finishedAt: new Date(2026, 2, 1).toISOString() },
+      { finishedAt: new Date(2025, 11, 20).toISOString() },
+      {},
+    ];
+    expect(booksFinishedIn(2026, books)).toBe(1);
   });
 });

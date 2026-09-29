@@ -6,7 +6,7 @@ import { space } from '@/theme';
 /** Empty state: shown until the user has logged pages on at least one day. */
 export function StreakCard() {
   return (
-    <Card variant="dashed" style={styles.card}>
+    <Card variant="steel" style={styles.card}>
       <StreakDots days={['today', 'future', 'future', 'future']} />
       <Text variant="secondary" color="textMuted" style={styles.text}>
         Your reading streak starts the first day you log pages.

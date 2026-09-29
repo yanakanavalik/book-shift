@@ -16,3 +16,9 @@ export function goalPace(goal: number): string {
   const months = Math.round(12 / goal);
   return months === 1 ? 'About one book a month.' : `About one book every ${months} months.`;
 }
+
+/** Books finished in a given calendar year (local time). */
+export function booksFinishedIn(year: number, books: { finishedAt?: string }[]): number {
+  return books.filter((book) => book.finishedAt && new Date(book.finishedAt).getFullYear() === year).length;
+}
+

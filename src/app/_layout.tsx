@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { BooksProvider, useBooks } from '@/store/books';
 import { GoalsProvider, useGoals } from '@/store/goals';
 import { OnboardingProvider, useOnboarding } from '@/store/onboarding';
-import { colors, fontAssets, fonts } from '@/theme';
+import { colors, fontAssets, fonts, radius } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -55,8 +55,20 @@ function RootStack() {
       </Stack.Protected>
       <Stack.Protected guard={hasSeenWelcome}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="add" options={{ title: 'Add a book', presentation: 'modal' }} />
-        <Stack.Screen name="book/[id]" options={{ title: '' }} />
+        <Stack.Screen name="add" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="goal" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen
+          name="book/[id]"
+          // Native sheet (UISheetPresentationController on iOS), sized to its content.
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: 'fitToContents',
+            sheetCornerRadius: radius.sheet,
+            sheetGrabberVisible: false,
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.bg },
+          }}
+        />
       </Stack.Protected>
     </Stack>
   );

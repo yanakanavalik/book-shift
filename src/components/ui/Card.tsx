@@ -3,13 +3,13 @@ import { StyleSheet, View, type ViewProps } from 'react-native';
 import { colors, radius, space } from '@/theme';
 
 export type CardProps = ViewProps & {
-  /** `surface`: peach card for grouping content. `dashed`: outlined placeholder for empty states. */
-  variant?: 'surface' | 'dashed';
+  /** `surface`: peach card for grouping content. `steel`: steel-tinted card for streak and time content. */
+  variant?: 'surface' | 'steel';
 };
 
 /** Surfaces, not lines: use `Divider` only inside a card. */
 export function Card({ variant = 'surface', style, ...props }: CardProps) {
-  return <View style={[styles.card, variant === 'dashed' ? styles.dashed : styles.surface, style]} {...props} />;
+  return <View style={[styles.card, variant === 'steel' ? styles.steel : styles.surface, style]} {...props} />;
 }
 
 export function Divider() {
@@ -25,11 +25,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.cards,
   },
-  dashed: {
-    borderRadius: radius.listRow,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.outlineSoft,
+  steel: {
+    backgroundColor: colors.surfaceSteel,
+    borderRadius: radius.cards,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
