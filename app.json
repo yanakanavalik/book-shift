@@ -21,7 +21,16 @@
       "package": "com.yanakanavalik.bookshift"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FCF1DE",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
     ],
     "scheme": "bookshift",
     "experiments": {

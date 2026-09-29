@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
-import { useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 
-import { colors, spacing } from '@/lib/theme';
+import { Button, TextField } from '@/components/ui';
+import { space } from '@/theme';
 import { useBooks } from '@/store/books';
 
 export default function AddBookScreen() {
@@ -23,57 +24,33 @@ export default function AddBookScreen() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-        <Field label="Title">
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="e.g. The Left Hand of Darkness"
-            placeholderTextColor={colors.textMuted}
-            autoFocus
-            returnKeyType="next"
-          />
-        </Field>
-        <Field label="Author">
-          <TextInput
-            style={styles.input}
-            value={author}
-            onChangeText={setAuthor}
-            placeholder="Optional"
-            placeholderTextColor={colors.textMuted}
-            returnKeyType="next"
-          />
-        </Field>
-        <Field label="Total pages">
-          <TextInput
-            style={styles.input}
-            value={pages}
-            onChangeText={(text) => setPages(text.replace(/[^0-9]/g, ''))}
-            placeholder="e.g. 304"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="number-pad"
-            returnKeyType="done"
-            onSubmitEditing={save}
-          />
-        </Field>
-        <Pressable
-          style={[styles.button, !canSave && styles.buttonDisabled]}
-          onPress={save}
-          disabled={!canSave}
-        >
-          <Text style={styles.buttonText}>Save</Text>
-        </Pressable>
+        <TextField
+          label="Title"
+          value={title}
+          onChangeText={setTitle}
+          placeholder="e.g. The Salt Road"
+          autoFocus
+          returnKeyType="next"
+        />
+        <TextField
+          label="Author"
+          value={author}
+          onChangeText={setAuthor}
+          placeholder="Optional"
+          returnKeyType="next"
+        />
+        <TextField
+          label="Total pages"
+          value={pages}
+          onChangeText={(text) => setPages(text.replace(/[^0-9]/g, ''))}
+          placeholder="e.g. 340"
+          keyboardType="number-pad"
+          returnKeyType="done"
+          onSubmitEditing={save}
+        />
+        <Button label="Add a book" onPress={save} disabled={!canSave} style={styles.submit} />
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      {children}
-    </View>
   );
 }
 
@@ -82,40 +59,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   form: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: space[4],
+    gap: space[4],
   },
-  field: {
-    gap: spacing.xs,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: colors.text,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  buttonDisabled: {
-    opacity: 0.4,
-  },
-  buttonText: {
-    color: colors.primaryText,
-    fontSize: 16,
-    fontWeight: '600',
+  submit: {
+    marginTop: space[2],
   },
 });

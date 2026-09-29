@@ -1,70 +1,50 @@
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { ProgressBar } from '@/components/ProgressBar';
+import { Card, ProgressBar, Text } from '@/components/ui';
 import { progressPercent, type Book } from '@/lib/books';
-import { colors, spacing } from '@/lib/theme';
+import { space } from '@/theme';
 
 export function BookCard({ book }: { book: Book }) {
   const percent = progressPercent(book);
   return (
     <Link href={{ pathname: '/book/[id]', params: { id: book.id } }} asChild>
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-        <View style={styles.header}>
-          <View style={styles.titles}>
-            <Text style={styles.title} numberOfLines={2}>
-              {book.title}
+      <Pressable style={({ pressed }) => pressed && styles.pressed}>
+        <Card>
+          <View style={styles.header}>
+            <View style={styles.titles}>
+              <Text variant="bookTitle" numberOfLines={2}>
+                {book.title}
+              </Text>
+              <Text variant="secondary" color="textMuted">
+                {[book.author, `${book.totalPages} pp`].filter(Boolean).join(' · ')}
+              </Text>
+            </View>
+            <Text variant="label" color="accentText">
+              {percent}%
             </Text>
-            {book.author ? <Text style={styles.author}>{book.author}</Text> : null}
           </View>
-          <Text style={styles.percent}>{percent}%</Text>
-        </View>
-        <ProgressBar percent={percent} />
-        <Text style={styles.pages}>
-          Page {book.currentPage} of {book.totalPages}
-        </Text>
+          <ProgressBar percent={percent} />
+          <Text variant="secondary" color="textMuted">
+            p. {book.currentPage} / {book.totalPages}
+          </Text>
+        </Card>
       </Pressable>
     </Link>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.sm,
+    gap: space[2],
   },
   titles: {
     flex: 1,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  author: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  percent: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  pages: {
-    fontSize: 13,
-    color: colors.textMuted,
+    gap: 2,
   },
 });

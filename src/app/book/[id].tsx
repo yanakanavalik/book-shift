@@ -1,16 +1,16 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { ProgressBar } from '@/components/ProgressBar';
+import { Button, Card, ProgressBar, Text } from '@/components/ui';
 import { bookStatus, progressPercent } from '@/lib/books';
-import { colors, spacing } from '@/lib/theme';
+import { colors, radius, sizes, space, typography } from '@/theme';
 import { useBooks } from '@/store/books';
 
 const STATUS_LABEL = {
-  'want-to-read': 'Not started',
-  reading: 'Reading',
-  finished: 'Finished',
+  'want-to-read': 'To read',
+  reading: 'Currently reading',
+  finished: 'Read',
 } as const;
 
 export default function BookScreen() {
@@ -23,7 +23,7 @@ export default function BookScreen() {
   if (!book) {
     return (
       <View style={styles.center}>
-        <Text style={styles.muted}>This book no longer exists.</Text>
+        <Text color="textMuted">This book no longer exists.</Text>
       </View>
     );
   }
@@ -50,24 +50,33 @@ export default function BookScreen() {
       <Stack.Screen options={{ title: book.title }} />
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>{book.title}</Text>
-        {book.author ? <Text style={styles.author}>{book.author}</Text> : null}
-        <Text style={styles.status}>{STATUS_LABEL[bookStatus(book)]}</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.percent}>{percent}%</Text>
-        <ProgressBar percent={percent} height={12} />
-        <Text style={styles.muted}>
-          Page {book.currentPage} of {book.totalPages} · {book.totalPages - book.currentPage} left
+        <Text variant="kicker" color="accentText">
+          {STATUS_LABEL[bookStatus(book)]}
         </Text>
+        <Text variant="sheetTitle">{book.title}</Text>
+        {book.author ? <Text color="textMuted">{book.author}</Text> : null}
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Update progress</Text>
+      <Card>
+        <View style={styles.progressHeader}>
+          <Text variant="stat">{percent}%</Text>
+          <Text variant="secondary" color="textMuted">
+            {book.totalPages - book.currentPage} pages left
+          </Text>
+        </View>
+        <ProgressBar percent={percent} height={8} />
+        <Text variant="secondary" color="textMuted">
+          p. {book.currentPage} / {book.totalPages}
+        </Text>
+      </Card>
+
+      <Card style={styles.updateCard}>
+        <Text variant="kicker" color="textMuted">
+          Update progress
+        </Text>
         <View style={styles.stepperRow}>
-          <StepButton label="−10" onPress={() => setPage(book.currentPage - 10)} />
-          <StepButton label="−1" onPress={() => setPage(book.currentPage - 1)} />
+          <StepButton delta={-10} onPress={() => setPage(book.currentPage - 10)} />
+          <StepButton delta={-1} onPress={() => setPage(book.currentPage - 1)} />
           <TextInput
             style={styles.pageInput}
             value={pageDraft ?? String(book.currentPage)}
@@ -79,34 +88,33 @@ export default function BookScreen() {
             keyboardType="number-pad"
             returnKeyType="done"
             selectTextOnFocus
+            selectionColor={colors.accent}
             accessibilityLabel="Current page"
           />
-          <StepButton label="+1" onPress={() => setPage(book.currentPage + 1)} />
-          <StepButton label="+10" onPress={() => setPage(book.currentPage + 10)} />
+          <StepButton delta={1} onPress={() => setPage(book.currentPage + 1)} />
+          <StepButton delta={10} onPress={() => setPage(book.currentPage + 10)} />
         </View>
         {bookStatus(book) !== 'finished' ? (
-          <Pressable style={styles.primaryButton} onPress={() => setPage(book.totalPages)}>
-            <Text style={styles.primaryButtonText}>Mark as finished</Text>
-          </Pressable>
+          <Button label="Mark as read" onPress={() => setPage(book.totalPages)} />
         ) : null}
-      </View>
+      </Card>
 
-      <Pressable onPress={confirmDelete} style={styles.deleteButton}>
-        <Text style={styles.deleteText}>Delete book</Text>
-      </Pressable>
+      <Button label="Delete book" variant="link" onPress={confirmDelete} />
     </ScrollView>
   );
 }
 
-function StepButton({ label, onPress }: { label: string; onPress: () => void }) {
+function StepButton({ delta, onPress }: { delta: number; onPress: () => void }) {
+  const label = delta > 0 ? `+${delta}` : `−${Math.abs(delta)}`;
   return (
-    <Pressable
+    <Button
+      label={label}
+      variant="outline"
+      size="sm"
       onPress={onPress}
-      style={({ pressed }) => [styles.stepButton, pressed && { opacity: 0.6 }]}
-      accessibilityLabel={`${label} pages`}
-    >
-      <Text style={styles.stepText}>{label}</Text>
-    </Pressable>
+      style={styles.stepButton}
+      accessibilityLabel={`${delta > 0 ? 'Forward' : 'Back'} ${Math.abs(delta)} pages`}
+    />
   );
 }
 
@@ -117,97 +125,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   container: {
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: space[4],
+    gap: space[3],
   },
   headerBlock: {
-    gap: spacing.xs,
+    gap: space[1],
+    marginBottom: space[2],
   },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: colors.text,
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
   },
-  author: {
-    fontSize: 17,
-    color: colors.textMuted,
-  },
-  status: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: spacing.xs,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  percent: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  muted: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+  updateCard: {
+    gap: space[3],
   },
   stepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: space[2],
   },
   stepButton: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: colors.track,
-    alignItems: 'center',
-  },
-  stepText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
+    paddingHorizontal: 0,
   },
   pageInput: {
+    ...typography.label,
     flex: 1.4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 10,
+    height: sizes.minTouch,
+    borderRadius: radius.pill,
+    backgroundColor: colors.bg,
     textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '600',
     color: colors.text,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  primaryButtonText: {
-    color: colors.primaryText,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  deleteText: {
-    color: colors.danger,
-    fontSize: 16,
   },
 });

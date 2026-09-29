@@ -38,13 +38,26 @@ The `ios/` and `android/` folders are generated from `app.json` on demand and ar
 src/
   app/              # Expo Router screens (file-based routing)
     _layout.tsx     # Root stack navigator + providers
-    index.tsx       # Library: list of books with progress
+    (tabs)/         # Native tab bar (Liquid Glass on iOS, Material on Android): Home and My books
     add.tsx         # Add-book modal
     book/[id].tsx   # Book detail: update current page, finish, delete
-  components/       # Reusable UI (BookCard, ProgressBar)
-  lib/              # Pure logic (book model, progress helpers) and theme
-  store/            # BooksProvider: state persisted to AsyncStorage
+    welcome.tsx     # First-launch welcome screen
+  components/
+    home/           # Home screen cards (empty shelf, yearly goal, streak)
+    ui/             # Design-system primitives: Text, Button, IconButton, Card, TextField, ProgressBar, StreakDots
+  lib/              # Pure logic (book model, progress helpers)
+  store/            # Providers persisted to AsyncStorage (books, goals, onboarding)
+  theme/            # Design tokens: colors, typography (Archivo), spacing, radius, sizes
 ```
+
+## Design system
+
+All colors, fonts and sizes live in `src/theme/` — screens never hard-code them.
+
+- **Colors:** use the semantic `colors` (`bg`, `surface`, `text`, `accent`, …), not the raw `palette`. Labels on cinnamon use `onAccent` (Dark Coffee) for contrast.
+- **Type:** render text with `<Text variant="bookTitle" color="textMuted">` from `@/components/ui`; variants match the type scale (`stat`, `screenTitle`, `sheetTitle`, `bookTitle`, `body`, `label`, `secondary`, `kicker`).
+- **Controls:** use `<Button variant="primary | dark | outline | link">`. Cinnamon `primary` is for the one main action on a screen.
+- **Icons:** [Lucide](https://lucide.dev), `sizes.icon` / `sizes.iconSmall` with `sizes.iconStroke`.
 
 ## Releasing
 
