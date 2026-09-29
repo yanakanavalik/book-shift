@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -15,8 +15,15 @@ const COVER_WIDTH = 96;
 export default function BookSheet() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { books, removeBook } = useBooks();
+  const { books, removeBook, markOpened } = useBooks();
   const book = books.find((b) => b.id === id);
+  const found = !!book;
+
+  // The small widget shows the book opened last.
+  useEffect(() => {
+    if (found) markOpened(id);
+  }, [found, id, markOpened]);
+
   // iOS already adds the bottom inset to fit-to-content sheets; Android doesn't.
   const sheetStyle = [styles.sheet, { paddingBottom: Platform.OS === 'ios' ? space[2] : insets.bottom + space[4] }];
 

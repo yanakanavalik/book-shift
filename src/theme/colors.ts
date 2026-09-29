@@ -70,4 +70,13 @@ export const coverStyles = [
   { background: palette.ground, text: palette.darkCoffee, border: palette.darkCoffee },
 ] as const;
 
+export type CoverStyle = (typeof coverStyles)[number];
+
+/** Stable fallback cover style for a book, so it keeps the same look everywhere (app and widgets). */
+export function coverStyleFor(seed: string): CoverStyle {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  return coverStyles[Math.abs(hash) % coverStyles.length];
+}
+
 export type ColorToken = keyof typeof colors;

@@ -56,3 +56,28 @@ export function streakCalendar(log: ReadingLog, today: Date, weeks = 3): StreakD
     return firstLogged && key > firstLogged ? 'missed' : 'empty';
   });
 }
+
+const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+/** The last `count` days ending today, oldest first, with weekday initials, e.g. for a one-row streak. */
+export function recentDays(log: ReadingLog, today: Date, count = 7): { letter: string; state: StreakDay }[] {
+  const todayKey = dateKey(today);
+  const firstLogged = Object.keys(log)
+    .filter((key) => log[key] > 0)
+    .sort()[0];
+  return Array.from({ length: count }, (_, i) => {
+    const date = addDays(today, i - count + 1);
+    const key = dateKey(date);
+    const state: StreakDay =
+      key === todayKey
+        ? log[key]
+          ? 'todayRead'
+          : 'today'
+        : log[key]
+          ? 'read'
+          : firstLogged && key > firstLogged
+            ? 'missed'
+            : 'empty';
+    return { letter: WEEKDAY_LETTERS[date.getDay()], state };
+  });
+}

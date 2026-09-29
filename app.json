@@ -31,7 +31,27 @@
           "imageWidth": 200
         }
       ],
-      "expo-image"
+      "expo-image",
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "ReadingWidget",
+              "displayName": "Reading",
+              "description": "Your yearly goal, streak and the books you’re reading, at a glance.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "systemLarge"
+                ],
+                "contentMarginsDisabled": true
+              }
+            }
+          ]
+        }
+      ]
     ],
     "scheme": "bookshift",
     "experiments": {

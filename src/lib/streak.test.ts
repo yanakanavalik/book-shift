@@ -1,4 +1,4 @@
-import { currentStreak, dateKey, logPages, streakCalendar, type ReadingLog } from './streak';
+import { currentStreak, dateKey, logPages, recentDays, streakCalendar, type ReadingLog } from './streak';
 
 // Tuesday 29 September 2026.
 const today = new Date(2026, 8, 29, 20);
@@ -47,5 +47,13 @@ describe('streakCalendar', () => {
 
   it('uses local calendar days', () => {
     expect(dateKey(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
+  });
+});
+
+describe('recentDays', () => {
+  it('lists the last seven days ending today with weekday initials', () => {
+    const days = recentDays({ '2026-09-27': 5, '2026-09-29': 3 }, today);
+    expect(days.map((d) => d.letter).join('')).toBe('WTFSSMT');
+    expect(days.map((d) => d.state)).toEqual(['empty', 'empty', 'empty', 'empty', 'read', 'missed', 'todayRead']);
   });
 });

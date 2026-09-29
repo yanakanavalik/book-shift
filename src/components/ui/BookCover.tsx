@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { coverStyles, radius, space } from '@/theme';
+import { coverStyleFor, radius, space } from '@/theme';
 
 import { Text } from './Text';
 
@@ -18,12 +18,6 @@ export type BookCoverProps = {
 const ASPECT = 1.5;
 /** Below this width the fallback cover is a plain color block; the title wouldn't be legible. */
 const MIN_WIDTH_FOR_TITLE = 72;
-
-function fallbackStyle(seed: string) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  return coverStyles[Math.abs(hash) % coverStyles.length];
-}
 
 /**
  * Cover image when available; otherwise one of the six typographic styles, assigned by `seed`.
@@ -47,7 +41,7 @@ export function BookCover({ title, author, coverUrl, seed, width }: BookCoverPro
     );
   }
 
-  const style = fallbackStyle(seed);
+  const style = coverStyleFor(seed);
   return (
     <View
       style={[

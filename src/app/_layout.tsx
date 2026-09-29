@@ -8,6 +8,7 @@ import { BooksProvider, useBooks } from '@/store/books';
 import { GoalsProvider, useGoals } from '@/store/goals';
 import { OnboardingProvider, useOnboarding } from '@/store/onboarding';
 import { colors, fontAssets, fonts, radius } from '@/theme';
+import { useWidgetSync } from '@/widgets/useWidgetSync';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -29,6 +30,7 @@ function RootStack() {
   const { loaded: onboardingLoaded, hasSeenWelcome } = useOnboarding();
   const { loaded: booksLoaded } = useBooks();
   const { loaded: goalsLoaded } = useGoals();
+  useWidgetSync();
   // If fonts fail to load, fall back to the system font rather than blocking the app.
   const ready = (fontsLoaded || !!fontError) && onboardingLoaded && booksLoaded && goalsLoaded;
 

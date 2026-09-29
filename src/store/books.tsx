@@ -14,11 +14,14 @@ import { logPages, type ReadingLog } from '@/lib/streak';
 
 const STORAGE_KEY = 'book-shift/books/v1';
 const LOG_STORAGE_KEY = 'book-shift/reading-log/v1';
+const LAST_OPENED_STORAGE_KEY = 'book-shift/last-opened/v1';
 
 type BooksContextValue = {
   books: Book[];
   /** Pages read per day, recorded whenever progress moves forward. Drives the streak. */
   readingLog: ReadingLog;
+  /** The book the user opened most recently; the small widget shows it. */
+  lastOpenedId: string | null;
   loaded: boolean;
   addBook: (input: NewBook) => Book;
   updateProgress: (id: string, page: number) => void;
@@ -27,6 +30,7 @@ type BooksContextValue = {
   /** Marks a book as read without logging the remaining pages as read today. */
   finishBook: (id: string) => void;
   removeBook: (id: string) => void;
+  markOpened: (id: string) => void;
 };
 
 const BooksContext = createContext<BooksContextValue | null>(null);
@@ -34,13 +38,15 @@ const BooksContext = createContext<BooksContextValue | null>(null);
 export function BooksProvider({ children }: { children: ReactNode }) {
   const [books, setBooks] = useState<Book[]>([]);
   const [readingLog, setReadingLog] = useState<ReadingLog>({});
+  const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.multiGet([STORAGE_KEY, LOG_STORAGE_KEY])
-      .then(([[, rawBooks], [, rawLog]]) => {
+    AsyncStorage.multiGet([STORAGE_KEY, LOG_STORAGE_KEY, LAST_OPENED_STORAGE_KEY])
+      .then(([[, rawBooks], [, rawLog], [, lastOpened]]) => {
         if (rawBooks) setBooks(JSON.parse(rawBooks) as Book[]);
         if (rawLog) setReadingLog(JSON.parse(rawLog) as ReadingLog);
+        setLastOpenedId(lastOpened);
       })
       .catch((error) => console.warn('Failed to load books', error))
       .finally(() => setLoaded(true));
@@ -87,13 +93,31 @@ export function BooksProvider({ children }: { children: ReactNode }) {
     setBooks((prev) => prev.map((b) => (b.id === id ? finishReading(b) : b)));
   }, []);
 
+  const markOpened = useCallback((id: string) => {
+    setLastOpenedId(id);
+    AsyncStorage.setItem(LAST_OPENED_STORAGE_KEY, id).catch((error) =>
+      console.warn('Failed to save last opened book', error),
+    );
+  }, []);
+
   const removeBook = useCallback((id: string) => {
     setBooks((prev) => prev.filter((book) => book.id !== id));
   }, []);
 
   const value = useMemo(
-    () => ({ books, readingLog, loaded, addBook, updateProgress, startBook, finishBook, removeBook }),
-    [books, readingLog, loaded, addBook, updateProgress, startBook, finishBook, removeBook],
+    () => ({
+      books,
+      readingLog,
+      lastOpenedId,
+      loaded,
+      addBook,
+      updateProgress,
+      startBook,
+      finishBook,
+      removeBook,
+      markOpened,
+    }),
+    [books, readingLog, lastOpenedId, loaded, addBook, updateProgress, startBook, finishBook, removeBook, markOpened],
   );
 
   return <BooksContext.Provider value={value}>{children}</BooksContext.Provider>;
