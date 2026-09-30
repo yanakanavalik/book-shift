@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yanakanavalik.bookshift"
+      "bundleIdentifier": "com.yanakanavalik.bookshift",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -56,6 +59,29 @@
     "scheme": "bookshift",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.yanakanavalik.bookshift.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.yanakanavalik.bookshift"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "19b35f52-27be-4360-ac39-d932728f9dc5"
+      }
     }
   }
 }
