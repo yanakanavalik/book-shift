@@ -1,27 +1,15 @@
-import { Cloud, Smartphone, type LucideIcon } from 'lucide-react-native';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BookshelfIllustration } from '@/components/BookshelfIllustration';
-import { Button, Card, Divider, Text } from '@/components/ui';
-import { colors, sizes, space } from '@/theme';
+import { Button, Text } from '@/components/ui';
+import { colors, space } from '@/theme';
 import { useOnboarding } from '@/store/onboarding';
 
+// Sign-in (Google, with sync and backup) is planned; until then everything stays on this phone.
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const { completeWelcome } = useOnboarding();
-
-  // Accounts aren't implemented yet; let people continue locally instead of dead-ending.
-  const signInUnavailable = () => {
-    Alert.alert(
-      'Accounts are coming soon',
-      'For now your books are saved on this phone. You can sign in later to sync them.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Continue without account', onPress: completeWelcome },
-      ],
-    );
-  };
 
   return (
     <ScrollView
@@ -47,41 +35,10 @@ export default function WelcomeScreen() {
             catalog or enter them yourself.
           </Text>
         </View>
-
-        <Card style={styles.options}>
-          <Option
-            icon={Cloud}
-            title="With an account"
-            description="Your books sync across devices and are backed up."
-          />
-          <Divider />
-          <Option
-            icon={Smartphone}
-            title="Without an account"
-            description="Everything stays on this phone. You can sign in any time."
-          />
-        </Card>
       </View>
 
-      <View style={styles.actions}>
-        <Button label="Continue with Google" variant="dark" onPress={signInUnavailable} />
-        <Button label="Skip for now" variant="link" onPress={completeWelcome} />
-      </View>
+      <Button label="Get started" variant="dark" onPress={completeWelcome} />
     </ScrollView>
-  );
-}
-
-function Option({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description: string }) {
-  return (
-    <View style={styles.option}>
-      <Icon size={sizes.icon} strokeWidth={sizes.iconStroke} color={colors.text} />
-      <View style={styles.optionText}>
-        <Text variant="label">{title}</Text>
-        <Text variant="secondary" color="textMuted">
-          {description}
-        </Text>
-      </View>
-    </View>
   );
 }
 
@@ -100,22 +57,6 @@ const styles = StyleSheet.create({
     gap: space[6],
   },
   intro: {
-    gap: space[2],
-  },
-  options: {
-    paddingVertical: space[2],
-    gap: 0,
-  },
-  option: {
-    flexDirection: 'row',
-    gap: space[3],
-    paddingVertical: space[3],
-  },
-  optionText: {
-    flex: 1,
-    gap: space[1],
-  },
-  actions: {
     gap: space[2],
   },
 });
