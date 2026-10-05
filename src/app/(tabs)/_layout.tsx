@@ -1,10 +1,13 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
+import { SessionAccessory } from '@/components/SessionChip';
 import { colors } from '@/theme';
+import { useSessions } from '@/store/sessions';
 
 // The system tab bar: Liquid Glass on iOS 26+, Material 3 bottom navigation on Android.
 // On iOS 26 the glass background comes from the content behind it, so only colors are set here.
 export default function TabsLayout() {
+  const { active } = useSessions();
   return (
     <NativeTabs
       tintColor={colors.text}
@@ -13,6 +16,12 @@ export default function TabsLayout() {
       backgroundColor={colors.bg}
       indicatorColor={colors.surface}
     >
+      {/* iOS 26+: the minimized reading timer lives in the tab bar's native bottom accessory. */}
+      {active ? (
+        <NativeTabs.BottomAccessory>
+          <SessionAccessory />
+        </NativeTabs.BottomAccessory>
+      ) : null}
       <NativeTabs.Trigger name="index" contentStyle={{ backgroundColor: colors.bg }}>
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

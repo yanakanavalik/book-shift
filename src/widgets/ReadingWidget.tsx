@@ -167,7 +167,7 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
     </ZStack>
   );
 
-  // A pill "button" that deep-links into the app. Opens the book until a reading timer exists.
+  // A pill "button" that deep-links into the app, e.g. to start a reading session.
   const actionLink = (url: string, label: string, primary: boolean) => (
     <Link destination={url}>
       <HStack
@@ -177,13 +177,13 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
           background(primary ? c.accent : c.readTodayChip, shapes.capsule()),
         ]}
       >
-        <Image systemName="book" size={11} color={c.onAccent} />
+        <Image systemName="timer" size={11} color={c.onAccent} />
         <Text modifiers={[font({ size: 12, weight: 'semibold' }), foregroundStyle(c.onAccent)]}>{label}</Text>
       </HStack>
     </Link>
   );
 
-  const actionLabel = props.today.readToday ? 'Log pages' : 'Read now';
+  const actionLabel = props.today.readToday ? 'Start timer' : 'Read now';
 
   // --- Small: current book ---
 
@@ -288,7 +288,7 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
             </HStack>
             <Spacer />
             {bar(book.percent, c.accent, c.track, 4)}
-            {actionLink(book.url, actionLabel, !props.today.readToday)}
+            {actionLink(book.timerUrl, actionLabel, !props.today.readToday)}
           </VStack>
         ) : (
           <VStack
@@ -414,7 +414,7 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
         <Text modifiers={[font({ size: 11 }), foregroundStyle(c.textMuted)]}>{props.today.value}</Text>
         <Spacer />
         {props.current ? (
-          <Link destination={props.current.url}>
+          <Link destination={props.current.timerUrl}>
             <Text
               modifiers={[font({ size: 12, weight: 'semibold' }), foregroundStyle(c.accentText)]}
             >{`${actionLabel} →`}</Text>

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { BookGridItem } from '@/components/BookGridItem';
+import { SessionChipOverlay } from '@/components/SessionChip';
 import { useTabScreenPadding } from '@/components/tabScreen';
 import { Button, SegmentedControl, Text, TextField } from '@/components/ui';
 import { countByStatus, filterBooks, type BookFilter } from '@/lib/books';
@@ -33,62 +34,65 @@ export default function LibraryScreen() {
   ] as const;
 
   return (
-    <FlatList
-      data={visible}
-      keyExtractor={(book) => book.id}
-      numColumns={COLUMNS}
-      renderItem={({ item }) => <BookGridItem book={item} width={itemWidth} />}
-      columnWrapperStyle={styles.row}
-      contentContainerStyle={[styles.list, padding]}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      ListHeaderComponent={
-        <View style={styles.header}>
-          <View style={styles.titleRow}>
-            <View style={styles.titles}>
-              <Text variant="kicker" color="accentText">
-                {books.length} {books.length === 1 ? 'book' : 'books'}
-              </Text>
-              <Text variant="screenTitle" accessibilityRole="header">
-                My books
+    <>
+      <FlatList
+        data={visible}
+        keyExtractor={(book) => book.id}
+        numColumns={COLUMNS}
+        renderItem={({ item }) => <BookGridItem book={item} width={itemWidth} />}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={[styles.list, padding]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <View style={styles.titleRow}>
+              <View style={styles.titles}>
+                <Text variant="kicker" color="accentText">
+                  {books.length} {books.length === 1 ? 'book' : 'books'}
+                </Text>
+                <Text variant="screenTitle" accessibilityRole="header">
+                  My books
+                </Text>
+              </View>
+              <Button label="Add book" icon={Plus} onPress={() => router.push('/add')} style={styles.addButton} />
+            </View>
+            {books.length > 0 ? (
+              <>
+                <TextField
+                  icon={Search}
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search title or author"
+                  autoCorrect={false}
+                  returnKeyType="search"
+                  clearButtonMode="while-editing"
+                  accessibilityLabel="Search my books"
+                />
+                <SegmentedControl options={filters} value={filter} onChange={setFilter} size="sm" />
+              </>
+            ) : null}
+          </View>
+        }
+        ListEmptyComponent={
+          books.length === 0 ? (
+            <View style={styles.empty}>
+              <Text variant="sheetTitle">No books yet</Text>
+              <Text color="textMuted" style={styles.centered}>
+                Add the book you&apos;re reading to start tracking progress.
               </Text>
             </View>
-            <Button label="Add book" icon={Plus} onPress={() => router.push('/add')} style={styles.addButton} />
-          </View>
-          {books.length > 0 ? (
-            <>
-              <TextField
-                icon={Search}
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search title or author"
-                autoCorrect={false}
-                returnKeyType="search"
-                clearButtonMode="while-editing"
-                accessibilityLabel="Search my books"
-              />
-              <SegmentedControl options={filters} value={filter} onChange={setFilter} size="sm" />
-            </>
-          ) : null}
-        </View>
-      }
-      ListEmptyComponent={
-        books.length === 0 ? (
-          <View style={styles.empty}>
-            <Text variant="sheetTitle">No books yet</Text>
-            <Text color="textMuted" style={styles.centered}>
-              Add the book you&apos;re reading to start tracking progress.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.empty}>
-            <Text color="textMuted" style={styles.centered}>
-              {query.trim() ? `No books match “${query.trim()}”.` : 'No books here yet.'}
-            </Text>
-          </View>
-        )
-      }
-    />
+          ) : (
+            <View style={styles.empty}>
+              <Text color="textMuted" style={styles.centered}>
+                {query.trim() ? `No books match “${query.trim()}”.` : 'No books here yet.'}
+              </Text>
+            </View>
+          )
+        }
+      />
+      <SessionChipOverlay />
+    </>
   );
 }
 

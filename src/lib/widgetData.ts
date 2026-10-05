@@ -1,5 +1,6 @@
 import { bookStatus, progressPercent, type Book } from '@/lib/books';
 import { booksFinishedIn } from '@/lib/goals';
+import { readingActivity, type MinutesLog } from '@/lib/sessions';
 import { addDays, currentStreak, dateKey, recentDays, type ReadingLog, type StreakDay } from '@/lib/streak';
 import { colors, coverStyleFor, palette } from '@/theme';
 
@@ -39,6 +40,8 @@ export type WidgetBook = {
   percent: number;
   cover: { background: string; text: string; border?: string };
   url: string;
+  /** Opens the session sheet and starts timing this book. */
+  timerUrl: string;
 };
 
 export type ReadingWidgetProps = {
@@ -47,7 +50,7 @@ export type ReadingWidgetProps = {
   colors: WidgetColors;
   today: {
     readToday: boolean;
-    /** Pages read today, e.g. "18 pp". Becomes minutes once a reading timer exists. */
+    /** Minutes read today with the timer, e.g. "34m". */
     value: string;
   };
   streak: {
@@ -66,6 +69,7 @@ export type ReadingWidgetProps = {
 export type WidgetInput = {
   books: Book[];
   readingLog: ReadingLog;
+  minutesLog: MinutesLog;
   goal: number;
   lastOpenedId: string | null;
   now: Date;
@@ -84,24 +88,33 @@ function toWidgetBook(book: Book): WidgetBook {
     percent: progressPercent(book),
     cover: { background: cover.background, text: cover.text, border: 'border' in cover ? cover.border : undefined },
     url: `${APP_URL}book/${book.id}`,
+    timerUrl: `${APP_URL}session?book=${encodeURIComponent(book.id)}`,
   };
 }
 
-export function buildWidgetProps({ books, readingLog, goal, lastOpenedId, now }: WidgetInput): ReadingWidgetProps {
+export function buildWidgetProps({
+  books,
+  readingLog,
+  minutesLog,
+  goal,
+  lastOpenedId,
+  now,
+}: WidgetInput): ReadingWidgetProps {
   const inProgress = books
     .filter((book) => bookStatus(book) === 'reading')
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const current = inProgress.find((book) => book.id === lastOpenedId) ?? inProgress[0] ?? null;
   const reading = current ? [current, ...inProgress.filter((book) => book !== current)].slice(0, MAX_READING) : [];
 
-  const pagesToday = readingLog[dateKey(now)] ?? 0;
-  const readToday = pagesToday > 0;
-  const streak = currentStreak(readingLog, now);
+  // Logging pages or reading with the timer both count as a day read.
+  const activity = readingActivity(readingLog, minutesLog);
+  const readToday = !!activity[dateKey(now)];
+  const streak = currentStreak(activity, now);
 
   return {
     state: current ? 'active' : 'empty',
     colors: WIDGET_COLORS,
-    today: { readToday, value: `${pagesToday} pp` },
+    today: { readToday, value: `${minutesLog[dateKey(now)] ?? 0}m` },
     streak: {
       days: streak,
       label: readToday
@@ -109,7 +122,7 @@ export function buildWidgetProps({ books, readingLog, goal, lastOpenedId, now }:
         : streak > 0
           ? `Keep your ${streak}-day streak`
           : 'Start a streak today',
-      week: recentDays(readingLog, now),
+      week: recentDays(activity, now),
     },
     current: current ? toWidgetBook(current) : null,
     reading: reading.map(toWidgetBook),

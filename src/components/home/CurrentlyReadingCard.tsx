@@ -1,18 +1,29 @@
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
+import { Timer } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ProgressLogger } from '@/components/ProgressLogger';
-import { BookCover, Button, Card, ProgressBar, Text } from '@/components/ui';
+import { BookCover, Button, Card, IconButton, ProgressBar, Text } from '@/components/ui';
 import { progressPercent, type Book } from '@/lib/books';
-import { space } from '@/theme';
+import { colors, space } from '@/theme';
+import { useBooks } from '@/store/books';
+import { useSessions } from '@/store/sessions';
 
 const COVER_WIDTH = 84;
 
-/** A book in progress, with inline page logging. */
+/** A book in progress: reading timer, inline page logging, and marking it finished. */
 export function CurrentlyReadingCard({ book }: { book: Book }) {
+  const { finishBook } = useBooks();
+  const { active, startSession } = useSessions();
   const [logging, setLogging] = useState(false);
   const percent = progressPercent(book);
+  const timing = active?.bookId === book.id;
+
+  const openTimer = () => {
+    if (!timing) startSession(book.id, book.currentPage);
+    router.push('/session');
+  };
 
   return (
     <Card>
@@ -30,15 +41,24 @@ export function CurrentlyReadingCard({ book }: { book: Book }) {
         </Link>
 
         <View style={styles.details}>
-          <View>
-            <Text variant="bookTitle" numberOfLines={2}>
-              {book.title}
-            </Text>
-            {book.author ? (
-              <Text variant="secondary" color="textMuted" numberOfLines={1}>
-                {book.author}
+          <View style={styles.titleRow}>
+            <View style={styles.titles}>
+              <Text variant="bookTitle" numberOfLines={2}>
+                {book.title}
               </Text>
-            ) : null}
+              {book.author ? (
+                <Text variant="secondary" color="textMuted" numberOfLines={1}>
+                  {book.author}
+                </Text>
+              ) : null}
+            </View>
+            <IconButton
+              icon={Timer}
+              tone="steel"
+              active={timing}
+              onPress={openTimer}
+              accessibilityLabel={timing ? 'Show reading timer' : `Start reading timer for ${book.title}`}
+            />
           </View>
 
           <View style={styles.progress}>
@@ -59,7 +79,17 @@ export function CurrentlyReadingCard({ book }: { book: Book }) {
               onCancel={() => setLogging(false)}
             />
           ) : (
-            <Button label="Log pages" variant="outline" size="sm" onPress={() => setLogging(true)} />
+            <View style={styles.actions}>
+              <Button label="Log pages" size="md" onPress={() => setLogging(true)} style={styles.action} />
+              <Button
+                label="Finished"
+                variant="outline"
+                size="md"
+                onPress={() => finishBook(book.id)}
+                accessibilityLabel={`Mark ${book.title} as finished`}
+                style={[styles.action, styles.finished]}
+              />
+            </View>
           )}
         </View>
       </View>
@@ -76,6 +106,15 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: space[3],
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: space[2],
+  },
+  titles: {
+    flex: 1,
+    gap: space[1],
+  },
   progress: {
     gap: space[1] + 2,
   },
@@ -83,5 +122,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: space[2],
+  },
+  action: {
+    flex: 1,
+    paddingHorizontal: space[2],
+  },
+  finished: {
+    borderColor: colors.outlineSubtle,
   },
 });

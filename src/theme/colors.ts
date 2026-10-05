@@ -66,7 +66,8 @@ export const coverStyles = [
   { background: palette.darkCoffee, text: palette.ground },
   { background: palette.coolSteel, text: palette.darkCoffee },
   { background: palette.tangerine, text: palette.darkCoffee },
-  { background: palette.softPeach, text: palette.darkCoffee },
+  // Hairline outline so it doesn't disappear on peach cards.
+  { background: palette.softPeach, text: palette.darkCoffee, border: colors.outlineSubtle },
   { background: palette.ground, text: palette.darkCoffee, border: palette.darkCoffee },
 ] as const;
 

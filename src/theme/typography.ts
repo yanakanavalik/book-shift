@@ -17,6 +17,8 @@ export const fonts = {
 
 /** Type scale · Archivo. Sizes and weights from the design system; line heights tuned for mobile. */
 export const typography = {
+  /** 76 / 600, tabular — the running reading-session clock. */
+  timer: { fontFamily: fonts.semibold, fontSize: 76, lineHeight: 84, letterSpacing: -2, fontVariant: ['tabular-nums'] },
   /** 44 / 600 — big numbers, e.g. books this year. */
   stat: { fontFamily: fonts.semibold, fontSize: 44, lineHeight: 48, letterSpacing: -1 },
   /** 38 / 600 — top-level screen titles. */

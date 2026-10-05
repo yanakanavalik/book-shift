@@ -21,14 +21,14 @@ const library = [smallHours, saltRoad, finished, toRead];
 
 describe('buildWidgetProps', () => {
   it('shows the empty state when nothing is in progress', () => {
-    const props = buildWidgetProps({ books: [toRead], readingLog: {}, goal: 24, lastOpenedId: null, now });
+    const props = buildWidgetProps({ books: [toRead], readingLog: {}, minutesLog: {}, goal: 24, lastOpenedId: null, now });
     expect(props.state).toBe('empty');
     expect(props.current).toBeNull();
     expect(props.urls.add).toBe('bookshift://add');
   });
 
   it('picks the last opened book as current, falling back to the latest progress', () => {
-    const base = { books: library, readingLog: {}, goal: 30, now };
+    const base = { books: library, readingLog: {}, minutesLog: {}, goal: 30, now };
     expect(buildWidgetProps({ ...base, lastOpenedId: null }).current?.title).toBe('The Salt Road');
     expect(buildWidgetProps({ ...base, lastOpenedId: smallHours.id }).current?.title).toBe('Small Hours');
     // A finished book can't be "current".
@@ -36,7 +36,7 @@ describe('buildWidgetProps', () => {
   });
 
   it('lists books in progress with progress and a deep link', () => {
-    const props = buildWidgetProps({ books: library, readingLog: {}, goal: 30, lastOpenedId: null, now });
+    const props = buildWidgetProps({ books: library, readingLog: {}, minutesLog: {}, goal: 30, lastOpenedId: null, now });
     expect(props.reading.map((b) => [b.title, b.percent])).toEqual([
       ['The Salt Road', 62],
       ['Small Hours', 25],
@@ -47,16 +47,16 @@ describe('buildWidgetProps', () => {
 
   it('reports today and the streak when read today', () => {
     const readingLog = { '2026-09-27': 10, '2026-09-28': 12, '2026-09-29': 18 };
-    const props = buildWidgetProps({ books: library, readingLog, goal: 30, lastOpenedId: null, now });
-    expect(props.today).toEqual({ readToday: true, value: '18 pp' });
+    const props = buildWidgetProps({ books: library, readingLog, minutesLog: {}, goal: 30, lastOpenedId: null, now });
+    expect(props.today).toEqual({ readToday: true, value: '0m' });
     expect(props.streak.label).toBe('3-day streak');
     expect(props.streak.week.at(-1)).toEqual({ letter: 'T', state: 'todayRead' });
   });
 
   it('nudges to keep the streak when not read yet today', () => {
     const readingLog = { '2026-09-27': 10, '2026-09-28': 12 };
-    const props = buildWidgetProps({ books: library, readingLog, goal: 30, lastOpenedId: null, now });
-    expect(props.today).toEqual({ readToday: false, value: '0 pp' });
+    const props = buildWidgetProps({ books: library, readingLog, minutesLog: {}, goal: 30, lastOpenedId: null, now });
+    expect(props.today).toEqual({ readToday: false, value: '0m' });
     expect(props.streak.label).toBe('Keep your 2-day streak');
     expect(props.streak.week.at(-1)?.state).toBe('today');
   });
@@ -65,7 +65,7 @@ describe('buildWidgetProps', () => {
 describe('buildWidgetTimeline', () => {
   it('schedules resets at the next midnights', () => {
     const readingLog = { '2026-09-29': 18 };
-    const timeline = buildWidgetTimeline({ books: library, readingLog, goal: 30, lastOpenedId: null, now });
+    const timeline = buildWidgetTimeline({ books: library, readingLog, minutesLog: {}, goal: 30, lastOpenedId: null, now });
     const [today, tomorrow, dayAfter] = timeline;
     expect(timeline).toHaveLength(4);
     expect(dayAfter.props.streak.label).toBe('Start a streak today');
@@ -73,5 +73,21 @@ describe('buildWidgetTimeline', () => {
     expect(tomorrow.date).toEqual(new Date(2026, 8, 30));
     expect(tomorrow.props.today.readToday).toBe(false);
     expect(tomorrow.props.streak.label).toBe('Keep your 1-day streak');
+  });
+});
+
+describe('reading time', () => {
+  it('shows minutes today and counts timed days toward the streak', () => {
+    const props = buildWidgetProps({
+      books: library,
+      readingLog: { '2026-09-28': 12 },
+      minutesLog: { '2026-09-29': 34 },
+      goal: 30,
+      lastOpenedId: null,
+      now,
+    });
+    expect(props.today).toEqual({ readToday: true, value: '34m' });
+    expect(props.streak.label).toBe('2-day streak');
+    expect(props.current?.timerUrl).toBe(`bookshift://session?book=${saltRoad.id}`);
   });
 });

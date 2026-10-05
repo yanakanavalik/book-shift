@@ -1,14 +1,19 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Card, StreakCalendar, Text } from '@/components/ui';
+import { readingActivity } from '@/lib/sessions';
 import { currentStreak, dateKey, streakCalendar } from '@/lib/streak';
 import { sizes, space } from '@/theme';
 import { useBooks } from '@/store/books';
+import { useSessions } from '@/store/sessions';
 
 export function StreakSummaryCard({ now }: { now: Date }) {
   const { readingLog } = useBooks();
-  const streak = currentStreak(readingLog, now);
-  const readToday = !!readingLog[dateKey(now)];
+  const { minutesLog } = useSessions();
+  // Logging pages or reading with the timer both count as a day read.
+  const activity = readingActivity(readingLog, minutesLog);
+  const streak = currentStreak(activity, now);
+  const readToday = !!activity[dateKey(now)];
 
   return (
     <Card style={styles.card}>
@@ -21,8 +26,8 @@ export function StreakSummaryCard({ now }: { now: Date }) {
           {streak === 1 ? 'day' : 'days'}
         </Text>
       </View>
-      <StreakCalendar days={streakCalendar(readingLog, now)} />
-      <Text variant="secondaryStrong" color="accentText">
+      <StreakCalendar days={streakCalendar(activity, now)} />
+      <Text variant="secondaryStrong" color="steelText">
         {readToday ? 'You read today' : 'Read today to keep it'}
       </Text>
     </Card>

@@ -8,6 +8,8 @@ import { GoalSummaryCard } from '@/components/home/GoalSummaryCard';
 import { StartReadingCard } from '@/components/home/StartReadingCard';
 import { StreakCard } from '@/components/home/StreakCard';
 import { StreakSummaryCard } from '@/components/home/StreakSummaryCard';
+import { TodayCard } from '@/components/home/TodayCard';
+import { SessionChipOverlay } from '@/components/SessionChip';
 import { useTabScreenPadding } from '@/components/tabScreen';
 import { LinkButton, Text } from '@/components/ui';
 import { bookStatus } from '@/lib/books';
@@ -21,33 +23,37 @@ export default function HomeScreen() {
   const now = new Date();
 
   return (
-    <ScrollView contentContainerStyle={[styles.content, padding]} keyboardShouldPersistTaps="handled">
-      <View style={styles.header}>
-        <Text variant="kicker" color="accentText">
-          {formatLongDate(now)}
-        </Text>
-        <Text variant="screenTitle" accessibilityRole="header">
-          {greeting(now)}
-        </Text>
-      </View>
+    <>
+      <ScrollView contentContainerStyle={[styles.content, padding]} keyboardShouldPersistTaps="handled">
+        <View style={styles.header}>
+          <Text variant="kicker" color="accentText">
+            {formatLongDate(now)}
+          </Text>
+          <Text variant="screenTitle" accessibilityRole="header">
+            {greeting(now)}
+          </Text>
+        </View>
 
-      {books.length === 0 ? (
-        <>
-          <EmptyShelfCard />
-          <GoalEditorCard year={now.getFullYear()} />
-          <StreakCard />
-        </>
-      ) : (
-        <>
-          <CurrentlyReading />
-          <View style={styles.statsRow}>
-            <GoalSummaryCard year={now.getFullYear()} />
-            <StreakSummaryCard now={now} />
-          </View>
-          <LinkButton label={`All my books · ${books.length}`} onPress={() => router.navigate('/books')} />
-        </>
-      )}
-    </ScrollView>
+        {books.length === 0 ? (
+          <>
+            <EmptyShelfCard />
+            <GoalEditorCard year={now.getFullYear()} />
+            <StreakCard />
+          </>
+        ) : (
+          <>
+            <CurrentlyReading />
+            <View style={styles.statsRow}>
+              <GoalSummaryCard year={now.getFullYear()} />
+              <StreakSummaryCard now={now} />
+            </View>
+            <TodayCard now={now} />
+            <LinkButton label={`All my books · ${books.length}`} onPress={() => router.navigate('/books')} />
+          </>
+        )}
+      </ScrollView>
+      <SessionChipOverlay />
+    </>
   );
 }
 

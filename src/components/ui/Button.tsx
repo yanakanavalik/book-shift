@@ -5,15 +5,17 @@ import { colors, radius, sizes, space, type ColorToken } from '@/theme';
 
 import { Text } from './Text';
 
-type Variant = 'primary' | 'dark' | 'outline' | 'link';
+type Variant = 'primary' | 'dark' | 'outline' | 'link' | 'plain';
 
 const VARIANTS: Record<Variant, { container: ViewStyle; label: ColorToken }> = {
   /** Cinnamon — the one main action on a screen. */
   primary: { container: { backgroundColor: colors.accent }, label: 'onAccent' },
   dark: { container: { backgroundColor: colors.text }, label: 'onDark' },
   outline: { container: { borderWidth: 1, borderColor: colors.outline }, label: 'text' },
-  /** Text-only, e.g. "Skip for now". */
+  /** Text-only, e.g. "Discard session". */
   link: { container: {}, label: 'accentText' },
+  /** Text-only in the body color, for a neutral secondary action like "Keep reading". */
+  plain: { container: {}, label: 'text' },
 };
 
 export type ButtonProps = Omit<PressableProps, 'style' | 'children'> & {
@@ -44,7 +46,7 @@ export function Button({ label, variant = 'primary', size = 'lg', icon: Icon, st
         { height: HEIGHTS[size] },
         { paddingHorizontal: size === 'lg' ? space[6] : space[4] },
         container,
-        variant === 'link' && styles.link,
+        (variant === 'link' || variant === 'plain') && styles.link,
         pressed && styles.pressed,
         disabled && styles.disabled,
         style,

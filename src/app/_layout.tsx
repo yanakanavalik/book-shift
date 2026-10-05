@@ -7,18 +7,30 @@ import { useEffect } from 'react';
 import { BooksProvider, useBooks } from '@/store/books';
 import { GoalsProvider, useGoals } from '@/store/goals';
 import { OnboardingProvider, useOnboarding } from '@/store/onboarding';
+import { SessionsProvider, useSessions } from '@/store/sessions';
 import { colors, fontAssets, fonts, radius } from '@/theme';
 import { useWidgetSync } from '@/widgets/useWidgetSync';
 
 SplashScreen.preventAutoHideAsync();
+
+const sheetOptions = {
+  presentation: 'formSheet',
+  sheetAllowedDetents: 'fitToContents',
+  sheetCornerRadius: radius.sheet,
+  sheetGrabberVisible: false,
+  headerShown: false,
+  contentStyle: { backgroundColor: colors.bg },
+} as const;
 
 export default function RootLayout() {
   return (
     <OnboardingProvider>
       <BooksProvider>
         <GoalsProvider>
-          <StatusBar style="dark" />
-          <RootStack />
+          <SessionsProvider>
+            <StatusBar style="dark" />
+            <RootStack />
+          </SessionsProvider>
         </GoalsProvider>
       </BooksProvider>
     </OnboardingProvider>
@@ -30,9 +42,10 @@ function RootStack() {
   const { loaded: onboardingLoaded, hasSeenWelcome } = useOnboarding();
   const { loaded: booksLoaded } = useBooks();
   const { loaded: goalsLoaded } = useGoals();
+  const { loaded: sessionsLoaded } = useSessions();
   useWidgetSync();
   // If fonts fail to load, fall back to the system font rather than blocking the app.
-  const ready = (fontsLoaded || !!fontError) && onboardingLoaded && booksLoaded && goalsLoaded;
+  const ready = (fontsLoaded || !!fontError) && onboardingLoaded && booksLoaded && goalsLoaded && sessionsLoaded;
 
   useEffect(() => {
     if (ready) SplashScreen.hide();
@@ -59,16 +72,14 @@ function RootStack() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="add" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="goal" options={{ presentation: 'modal', headerShown: false }} />
+        {/* Native sheet (UISheetPresentationController on iOS), sized to its content. */}
+        <Stack.Screen name="book/[id]" options={sheetOptions} />
         <Stack.Screen
-          name="book/[id]"
-          // Native sheet (UISheetPresentationController on iOS), sized to its content.
+          name="session"
           options={{
-            presentation: 'formSheet',
-            sheetAllowedDetents: 'fitToContents',
-            sheetCornerRadius: radius.sheet,
-            sheetGrabberVisible: false,
+            presentation: 'fullScreenModal',
             headerShown: false,
-            contentStyle: { backgroundColor: colors.bg },
+            contentStyle: { backgroundColor: colors.surfaceSteel },
           }}
         />
       </Stack.Protected>

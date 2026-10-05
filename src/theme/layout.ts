@@ -34,6 +34,8 @@ export const sizes = {
   minTouch: 44,
   controlHeight: 52,
   controlHeightSmall: 36,
+  /** Floating chips, e.g. the minimized reading timer. */
+  chipHeight: 48,
   /** Lucide icons, 2px stroke. */
   iconSmall: 16,
   icon: 20,
