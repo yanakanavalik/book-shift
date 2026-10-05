@@ -5,7 +5,14 @@ export function greeting(date: Date): string {
   return 'Good evening';
 }
 
+const LOCALE = 'en-GB';
+
 /** e.g. "Tuesday 29 September". */
 export function formatLongDate(date: Date): string {
-  return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  return date.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+/** e.g. "29 September 2026". */
+export function formatDate(date: Date): string {
+  return date.toLocaleDateString(LOCALE, { day: 'numeric', month: 'long', year: 'numeric' });
 }

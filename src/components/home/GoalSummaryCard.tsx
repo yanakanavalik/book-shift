@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { Button, Card, GoalDots, Text } from '@/components/ui';
+import { Button, Card, GoalDots, StatValue, Text } from '@/components/ui';
 import { booksFinishedIn } from '@/lib/goals';
 import { sizes, space } from '@/theme';
 import { useBooks } from '@/store/books';
@@ -19,12 +19,7 @@ export function GoalSummaryCard({ year }: { year: number }) {
         <Text variant="kicker">{year} goal</Text>
         <Button label="Edit" variant="outline" size="sm" onPress={() => router.push('/goal')} />
       </View>
-      <View style={styles.value} accessible accessibilityLabel={`${finished} of ${goal} books read`}>
-        <Text variant="stat">{finished}</Text>
-        <Text variant="secondary" color="textMuted">
-          / {goal} books
-        </Text>
-      </View>
+      <StatValue value={finished} unit={`/ ${goal} books`} accessibilityLabel={`${finished} of ${goal} books read`} />
       <GoalDots finished={finished} goal={goal} />
       <Text variant="secondaryStrong" color="accentText">
         {finished >= goal ? 'Goal reached' : `${goal - finished} to go`}
@@ -43,10 +38,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: sizes.controlHeightSmall,
-  },
-  value: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: space[1] + 2,
   },
 });

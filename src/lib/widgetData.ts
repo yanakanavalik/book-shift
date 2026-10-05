@@ -1,7 +1,7 @@
-import { bookStatus, progressPercent, type Book } from '@/lib/books';
+import { booksWithStatus, progressPercent, type Book } from '@/lib/books';
 import { booksFinishedIn } from '@/lib/goals';
-import { readingActivity, type MinutesLog } from '@/lib/sessions';
-import { addDays, currentStreak, dateKey, recentDays, type ReadingLog, type StreakDay } from '@/lib/streak';
+import { readingStreak, type MinutesLog } from '@/lib/sessions';
+import { addDays, amountOn, recentDays, type ReadingLog, type StreakDay } from '@/lib/streak';
 import { colors, coverStyleFor, palette } from '@/theme';
 
 /** Must match `scheme` in app.json. Widgets only run in development/production builds, where it applies. */
@@ -100,33 +100,25 @@ export function buildWidgetProps({
   lastOpenedId,
   now,
 }: WidgetInput): ReadingWidgetProps {
-  const inProgress = books
-    .filter((book) => bookStatus(book) === 'reading')
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const inProgress = booksWithStatus(books, 'reading');
   const current = inProgress.find((book) => book.id === lastOpenedId) ?? inProgress[0] ?? null;
   const reading = current ? [current, ...inProgress.filter((book) => book !== current)].slice(0, MAX_READING) : [];
 
-  // Logging pages or reading with the timer both count as a day read.
-  const activity = readingActivity(readingLog, minutesLog);
-  const readToday = !!activity[dateKey(now)];
-  const streak = currentStreak(activity, now);
+  const { activity, days, readToday } = readingStreak(readingLog, minutesLog, now);
+  const year = now.getFullYear();
 
   return {
     state: current ? 'active' : 'empty',
     colors: WIDGET_COLORS,
-    today: { readToday, value: `${minutesLog[dateKey(now)] ?? 0}m` },
+    today: { readToday, value: `${amountOn(minutesLog, now)}m` },
     streak: {
-      days: streak,
-      label: readToday
-        ? `${streak}-day streak`
-        : streak > 0
-          ? `Keep your ${streak}-day streak`
-          : 'Start a streak today',
+      days,
+      label: readToday ? `${days}-day streak` : days > 0 ? `Keep your ${days}-day streak` : 'Start a streak today',
       week: recentDays(activity, now),
     },
     current: current ? toWidgetBook(current) : null,
     reading: reading.map(toWidgetBook),
-    goal: { year: now.getFullYear(), finished: booksFinishedIn(now.getFullYear(), books), target: goal },
+    goal: { year, finished: booksFinishedIn(year, books), target: goal },
     urls: { home: APP_URL, add: `${APP_URL}add` },
   };
 }

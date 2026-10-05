@@ -20,14 +20,13 @@ const styles = StyleSheet.create({
   card: {
     padding: space[4],
     gap: space[2],
+    borderRadius: radius.cards,
   },
   surface: {
     backgroundColor: colors.surface,
-    borderRadius: radius.cards,
   },
   steel: {
     backgroundColor: colors.surfaceSteel,
-    borderRadius: radius.cards,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

@@ -1,14 +1,14 @@
-import { currentStreak, dateKey, logPages, recentDays, streakCalendar, type ReadingLog } from './streak';
+import { addToDay, currentStreak, dateKey, recentDays, streakCalendar, type ReadingLog } from './streak';
 
 // Tuesday 29 September 2026.
 const today = new Date(2026, 8, 29, 20);
 
-describe('logPages', () => {
-  it('adds pages to the day and ignores non-positive values', () => {
+describe('addToDay', () => {
+  it('adds the amount to the day and ignores non-positive values', () => {
     let log: ReadingLog = {};
-    log = logPages(log, 12, today);
-    log = logPages(log, 8, today);
-    log = logPages(log, -5, today);
+    log = addToDay(log, 12, today);
+    log = addToDay(log, 8, today);
+    log = addToDay(log, -5, today);
     expect(log).toEqual({ '2026-09-29': 20 });
   });
 });

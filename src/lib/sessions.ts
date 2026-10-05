@@ -1,7 +1,8 @@
-import { dateKey, type ReadingLog } from '@/lib/streak';
+import { pad2 } from '@/lib/format';
+import { amountOn, currentStreak, type DayLog, type ReadingLog } from '@/lib/streak';
 
-/** Minutes read per local day, keyed by `YYYY-MM-DD`. */
-export type MinutesLog = Record<string, number>;
+/** Minutes read per local day. */
+export type MinutesLog = DayLog;
 
 /**
  * A reading session that can be paused. Time only accrues while running (`resumedAt` set).
@@ -59,15 +60,7 @@ export function formatClock(ms: number): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
-}
-
-/** Credits minutes to the day the session ends. */
-export function logMinutes(log: MinutesLog, minutes: number, date: Date): MinutesLog {
-  if (minutes <= 0) return log;
-  const key = dateKey(date);
-  return { ...log, [key]: (log[key] ?? 0) + minutes };
+  return hours > 0 ? `${hours}:${pad2(minutes)}:${pad2(seconds)}` : `${pad2(minutes)}:${pad2(seconds)}`;
 }
 
 /** Days with any reading — pages logged or time read — for streaks. */
@@ -77,4 +70,10 @@ export function readingActivity(pagesLog: ReadingLog, minutesLog: MinutesLog): R
     if (minutes > 0) activity[key] = (activity[key] ?? 0) + minutes;
   }
   return activity;
+}
+
+/** Streak state as of `now`; logging pages or reading with the timer both count as a day read. */
+export function readingStreak(pagesLog: ReadingLog, minutesLog: MinutesLog, now: Date) {
+  const activity = readingActivity(pagesLog, minutesLog);
+  return { activity, days: currentStreak(activity, now), readToday: amountOn(activity, now) > 0 };
 }

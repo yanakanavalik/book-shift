@@ -3,7 +3,6 @@ import {
   elapsedMs,
   formatClock,
   isPaused,
-  logMinutes,
   normalizeSession,
   pauseSession,
   readingActivity,
@@ -53,14 +52,7 @@ describe('session timing', () => {
   });
 });
 
-describe('minutes log', () => {
-  it('adds minutes to the day and ignores empty sessions', () => {
-    let log = logMinutes({}, 20, at(21, 0));
-    log = logMinutes(log, 14, at(21, 0));
-    log = logMinutes(log, 0, at(21, 0));
-    expect(log).toEqual({ '2026-09-30': 34 });
-  });
-
+describe('readingActivity', () => {
   it('counts days with pages or minutes as reading activity', () => {
     expect(readingActivity({ '2026-09-28': 12 }, { '2026-09-29': 30, '2026-09-30': 0 })).toEqual({
       '2026-09-28': 12,

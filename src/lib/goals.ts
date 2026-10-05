@@ -1,3 +1,5 @@
+import { pluralize } from '@/lib/format';
+
 export const SUGGESTED_GOAL = 24;
 export const MIN_GOAL = 1;
 export const MAX_GOAL = 365;
@@ -11,7 +13,7 @@ export function goalPace(goal: number): string {
   const perMonth = goal / 12;
   if (perMonth >= 1) {
     const books = Math.round(perMonth);
-    return `About ${books} ${books === 1 ? 'book' : 'books'} a month.`;
+    return `About ${pluralize(books, 'book')} a month.`;
   }
   const months = Math.round(12 / goal);
   return months === 1 ? 'About one book a month.' : `About one book every ${months} months.`;

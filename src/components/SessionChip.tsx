@@ -7,7 +7,7 @@ import { Text } from '@/components/ui';
 import { useNow } from '@/hooks/useNow';
 import { elapsedMs, formatClock, isPaused } from '@/lib/sessions';
 import { colors, radius, sizes, space } from '@/theme';
-import { useBooks } from '@/store/books';
+import { useBook } from '@/store/books';
 import { useSessions } from '@/store/sessions';
 
 /** iOS 26+ hosts the chip in the native tab bar's bottom accessory; elsewhere it floats over tab screens. */
@@ -21,9 +21,8 @@ type ChipProps = {
 /** Minimized reading timer: the running clock, the book and its state. Opens the full timer. */
 export function SessionChip({ placement = 'regular' }: ChipProps) {
   const { active } = useSessions();
-  const { books } = useBooks();
+  const book = useBook(active?.bookId);
   const now = useNow();
-  const book = books.find((b) => b.id === active?.bookId);
   if (!active || !book) return null;
 
   const paused = isPaused(active);

@@ -24,10 +24,11 @@ import {
   shapes,
   strokeBorder,
   widgetURL,
+  type ViewModifier,
 } from '@expo/ui/swift-ui/modifiers';
 import { createWidget, type WidgetEnvironment } from 'expo-widgets';
 
-import type { ReadingWidgetProps } from '@/lib/widgetData';
+import type { ReadingWidgetProps, WidgetBook } from '@/lib/widgetData';
 
 /**
  * Home screen widget in three sizes. Runs in the widget extension's isolated runtime:
@@ -40,14 +41,28 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
   const c = props.colors;
   const PAD = 16;
   const BAR_SEGMENTS = 50;
+  /** Stands in for SwiftUI's `.infinity` in frames. */
+  const FILL = 10000;
 
   // --- Building blocks (must live inside the widget function) ---
 
-  const kicker = (label: string, color: string) => (
-    <Text modifiers={[font({ size: 10, weight: 'semibold' }), kerning(1.2), foregroundStyle(color)]}>
-      {label.toUpperCase()}
-    </Text>
-  );
+  /** Fills the available space, content pinned to the top left. */
+  const fillTopLeading = () => frame({ maxWidth: FILL, maxHeight: FILL, alignment: 'topLeading' });
+
+  const text = (
+    content: string,
+    size: number,
+    color: string,
+    weight?: 'medium' | 'semibold' | 'bold',
+    ...extra: ViewModifier[]
+  ) => <Text modifiers={[font({ size, weight }), foregroundStyle(color), ...extra]}>{content}</Text>;
+
+  const percentText = (book: WidgetBook, size: number, color: string = c.text) =>
+    text(`${book.percent}%`, size, color, 'semibold');
+  const pagesText = (book: WidgetBook, color: string, ...extra: ViewModifier[]) =>
+    text(`p. ${book.currentPage} / ${book.totalPages}`, 11, color, undefined, ...extra);
+
+  const kicker = (label: string, color: string) => text(label.toUpperCase(), 10, color, 'semibold', kerning(1.2));
 
   /** Progress bar from equal segments, so it fills any widget width without measuring. */
   const bar = (percent: number, fill: string, track: string, height: number, trackOpacity = 1) => {
@@ -60,7 +75,7 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
             modifiers={[
               foregroundStyle(i < filled ? fill : track),
               opacity(i < filled ? 1 : trackOpacity),
-              frame({ maxWidth: 10000, height }),
+              frame({ maxWidth: FILL, height }),
             ]}
           />
         ))}
@@ -68,11 +83,13 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
     );
   };
 
+  const circle = (key: number, size: number, style: ViewModifier) => (
+    <Circle key={key} modifiers={[style, frame({ width: size, height: size })]} />
+  );
+
   const dot = (state: string, size: number, key: number) => {
-    if (state === 'read')
-      return <Circle key={key} modifiers={[foregroundStyle(c.streakRead), frame({ width: size, height: size })]} />;
-    if (state === 'missed')
-      return <Circle key={key} modifiers={[foregroundStyle(c.streakMissed), frame({ width: size, height: size })]} />;
+    if (state === 'read') return circle(key, size, foregroundStyle(c.streakRead));
+    if (state === 'missed') return circle(key, size, foregroundStyle(c.streakMissed));
     if (state === 'todayRead')
       return (
         <ZStack key={key} modifiers={[frame({ width: size, height: size })]}>
@@ -81,24 +98,8 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
         </ZStack>
       );
     if (state === 'today')
-      return (
-        <Circle
-          key={key}
-          modifiers={[
-            strokeBorder({ color: c.streakToday, style: { lineWidth: 1.5, dash: [2, 2] } }),
-            frame({ width: size, height: size }),
-          ]}
-        />
-      );
-    return (
-      <Circle
-        key={key}
-        modifiers={[
-          strokeBorder({ color: c.streakEmpty, style: { lineWidth: 1 } }),
-          frame({ width: size, height: size }),
-        ]}
-      />
-    );
+      return circle(key, size, strokeBorder({ color: c.streakToday, style: { lineWidth: 1.5, dash: [2, 2] } }));
+    return circle(key, size, strokeBorder({ color: c.streakEmpty, style: { lineWidth: 1 } }));
   };
 
   const week = (size: number, spacing: number) => (
@@ -121,29 +122,19 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
     </VStack>
   );
 
+  const chipPadding = () => padding({ horizontal: 7, vertical: 3 });
+
   const todayChip = () =>
     props.today.readToday ? (
-      <HStack
-        spacing={3}
-        modifiers={[padding({ horizontal: 7, vertical: 3 }), background(c.readTodayChip, shapes.capsule())]}
-      >
+      <HStack spacing={3} modifiers={[chipPadding(), background(c.readTodayChip, shapes.capsule())]}>
         <Image systemName="checkmark" size={8} color={c.text} />
-        <Text modifiers={[font({ size: 10, weight: 'semibold' }), foregroundStyle(c.text)]}>Read today</Text>
+        {text('Read today', 10, c.text, 'semibold')}
       </HStack>
     ) : (
-      <Text
-        modifiers={[
-          font({ size: 10, weight: 'semibold' }),
-          foregroundStyle(c.text),
-          padding({ horizontal: 7, vertical: 3 }),
-          background(c.notReadChip, shapes.capsule()),
-        ]}
-      >
-        Not read yet
-      </Text>
+      text('Not read yet', 10, c.text, 'semibold', chipPadding(), background(c.notReadChip, shapes.capsule()))
     );
 
-  const cover = (book: NonNullable<ReadingWidgetProps['current']>, width: number, height: number) => (
+  const cover = (book: WidgetBook, width: number, height: number) => (
     <ZStack alignment="topLeading" modifiers={[frame({ width, height })]}>
       <RoundedRectangle cornerRadius={4} modifiers={[foregroundStyle(book.cover.background)]} />
       {book.cover.border ? (
@@ -152,18 +143,7 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
           modifiers={[strokeBorder({ color: book.cover.border, style: { lineWidth: 1 } })]}
         />
       ) : null}
-      {width >= 40 ? (
-        <Text
-          modifiers={[
-            font({ size: 7, weight: 'bold' }),
-            foregroundStyle(book.cover.text),
-            lineLimit(3),
-            padding({ all: 4 }),
-          ]}
-        >
-          {book.title}
-        </Text>
-      ) : null}
+      {width >= 40 ? text(book.title, 7, book.cover.text, 'bold', lineLimit(3), padding({ all: 4 })) : null}
     </ZStack>
   );
 
@@ -173,12 +153,12 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
       <HStack
         spacing={5}
         modifiers={[
-          frame({ maxWidth: 10000, height: 30 }),
+          frame({ maxWidth: FILL, height: 30 }),
           background(primary ? c.accent : c.readTodayChip, shapes.capsule()),
         ]}
       >
         <Image systemName="timer" size={11} color={c.onAccent} />
-        <Text modifiers={[font({ size: 12, weight: 'semibold' }), foregroundStyle(c.onAccent)]}>{label}</Text>
+        {text(label, 12, c.onAccent, 'semibold')}
       </HStack>
     </Link>
   );
@@ -196,13 +176,13 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
           spacing={4}
           modifiers={[
             padding({ all: PAD }),
-            frame({ maxWidth: 10000, maxHeight: 10000, alignment: 'topLeading' }),
+            fillTopLeading(),
             containerBackground(c.background, 'widget'),
             widgetURL(props.urls.add),
           ]}
         >
           {kicker('Reading', c.textMuted)}
-          <Text modifiers={[font({ size: 15, weight: 'semibold' }), foregroundStyle(c.text)]}>Add a book to start</Text>
+          {text('Add a book to start', 15, c.text, 'semibold')}
           <Spacer />
           <Image systemName="plus.circle.fill" size={28} color={c.accent} />
         </VStack>
@@ -214,23 +194,17 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
         spacing={4}
         modifiers={[
           padding({ all: PAD }),
-          frame({ maxWidth: 10000, maxHeight: 10000, alignment: 'topLeading' }),
+          fillTopLeading(),
           containerBackground(book.cover.background, 'widget'),
           widgetURL(book.url),
         ]}
       >
         {kicker('Reading', book.cover.text)}
-        <Text modifiers={[font({ size: 15, weight: 'semibold' }), foregroundStyle(book.cover.text), lineLimit(2)]}>
-          {book.title}
-        </Text>
+        {text(book.title, 15, book.cover.text, 'semibold', lineLimit(2))}
         <Spacer />
-        <Text
-          modifiers={[font({ size: 34, weight: 'semibold' }), foregroundStyle(book.cover.text)]}
-        >{`${book.percent}%`}</Text>
+        {percentText(book, 34, book.cover.text)}
         {bar(book.percent, book.cover.text, book.cover.text, 4, 0.25)}
-        <Text modifiers={[font({ size: 11 }), foregroundStyle(book.cover.text), opacity(0.8)]}>
-          {`p. ${book.currentPage} / ${book.totalPages}`}
-        </Text>
+        {pagesText(book, book.cover.text, opacity(0.8))}
       </VStack>
     );
   }
@@ -252,38 +226,30 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
         <VStack
           alignment="leading"
           spacing={4}
-          modifiers={[frame({ maxWidth: 10000, maxHeight: 10000, alignment: 'topLeading' })]}
+          modifiers={[fillTopLeading()]}
         >
           {kicker('Today', c.textMuted)}
-          <Text modifiers={[font({ size: 30, weight: 'semibold' }), foregroundStyle(c.text)]}>{props.today.value}</Text>
+          {text(props.today.value, 30, c.text, 'semibold')}
           {todayChip()}
           <Spacer />
-          <Text modifiers={[font({ size: 11, weight: 'semibold' }), foregroundStyle(c.text)]}>
-            {props.streak.label}
-          </Text>
+          {text(props.streak.label, 11, c.text, 'semibold')}
           {week(12, 5)}
         </VStack>
 
-        <Rectangle modifiers={[foregroundStyle(c.divider), frame({ width: 1, maxHeight: 10000 })]} />
+        <Rectangle modifiers={[foregroundStyle(c.divider), frame({ width: 1, maxHeight: FILL })]} />
 
         {book ? (
           <VStack
             alignment="leading"
             spacing={8}
-            modifiers={[frame({ maxWidth: 10000, maxHeight: 10000, alignment: 'topLeading' })]}
+            modifiers={[fillTopLeading()]}
           >
             <HStack spacing={10} alignment="top">
               {cover(book, 44, 60)}
               <VStack alignment="leading" spacing={2}>
-                <Text modifiers={[font({ size: 13, weight: 'semibold' }), foregroundStyle(c.text), lineLimit(2)]}>
-                  {book.title}
-                </Text>
-                <Text
-                  modifiers={[font({ size: 11 }), foregroundStyle(c.textMuted)]}
-                >{`p. ${book.currentPage} / ${book.totalPages}`}</Text>
-                <Text
-                  modifiers={[font({ size: 17, weight: 'semibold' }), foregroundStyle(c.text)]}
-                >{`${book.percent}%`}</Text>
+                {text(book.title, 13, c.text, 'semibold', lineLimit(2))}
+                {pagesText(book, c.textMuted)}
+                {percentText(book, 17)}
               </VStack>
             </HStack>
             <Spacer />
@@ -294,12 +260,10 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
           <VStack
             alignment="leading"
             spacing={4}
-            modifiers={[frame({ maxWidth: 10000, maxHeight: 10000, alignment: 'topLeading' })]}
+            modifiers={[fillTopLeading()]}
           >
-            <Text modifiers={[font({ size: 13, weight: 'semibold' }), foregroundStyle(c.text)]}>
-              Nothing in progress
-            </Text>
-            <Text modifiers={[font({ size: 11 }), foregroundStyle(c.textMuted)]}>Add a book to start</Text>
+            {text('Nothing in progress', 13, c.text, 'semibold')}
+            {text('Add a book to start', 11, c.textMuted)}
             <Spacer />
             {actionLink(props.urls.add, 'Add a book', true)}
           </VStack>
@@ -330,22 +294,16 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
         <VStack alignment="leading" spacing={2}>
           {kicker(`${props.goal.year} goal`, c.text)}
           <HStack alignment="firstTextBaseline" spacing={3}>
-            <Text
-              modifiers={[font({ size: 28, weight: 'semibold' }), foregroundStyle(c.text)]}
-            >{`${props.goal.finished}`}</Text>
-            <Text modifiers={[font({ size: 12 }), foregroundStyle(c.textMuted)]}>{`/ ${target}`}</Text>
+            {text(`${props.goal.finished}`, 28, c.text, 'semibold')}
+            {text(`/ ${target}`, 12, c.textMuted)}
           </HStack>
         </VStack>
         <Spacer />
         <VStack alignment="trailing" spacing={2}>
           {kicker('Streak', c.text)}
           <HStack alignment="firstTextBaseline" spacing={3}>
-            <Text
-              modifiers={[font({ size: 28, weight: 'semibold' }), foregroundStyle(c.text)]}
-            >{`${props.streak.days}`}</Text>
-            <Text modifiers={[font({ size: 12 }), foregroundStyle(c.textMuted)]}>
-              {props.streak.days === 1 ? 'day' : 'days'}
-            </Text>
+            {text(`${props.streak.days}`, 28, c.text, 'semibold')}
+            {text(props.streak.days === 1 ? 'day' : 'days', 12, c.textMuted)}
           </HStack>
         </VStack>
       </HStack>
@@ -370,7 +328,7 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
         bar((props.goal.finished / Math.max(1, target)) * 100, c.accent, c.track, 6)
       )}
 
-      <Rectangle modifiers={[foregroundStyle(c.divider), frame({ maxWidth: 10000, height: 1 })]} />
+      <Rectangle modifiers={[foregroundStyle(c.divider), frame({ maxWidth: FILL, height: 1 })]} />
 
       {props.reading.length > 0 ? (
         <VStack alignment="leading" spacing={10}>
@@ -380,13 +338,9 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
                 {cover(book, 26, 36)}
                 <VStack alignment="leading" spacing={5}>
                   <HStack>
-                    <Text modifiers={[font({ size: 13, weight: 'semibold' }), foregroundStyle(c.text), lineLimit(1)]}>
-                      {book.title}
-                    </Text>
+                    {text(book.title, 13, c.text, 'semibold', lineLimit(1))}
                     <Spacer />
-                    <Text
-                      modifiers={[font({ size: 13, weight: 'semibold' }), foregroundStyle(c.text)]}
-                    >{`${book.percent}%`}</Text>
+                    {percentText(book, 13)}
                   </HStack>
                   {bar(book.percent, c.accent, c.track, 3)}
                 </VStack>
@@ -397,12 +351,8 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
       ) : (
         <Link destination={props.urls.add}>
           <VStack alignment="leading" spacing={2}>
-            <Text modifiers={[font({ size: 13, weight: 'semibold' }), foregroundStyle(c.text)]}>
-              Nothing in progress
-            </Text>
-            <Text modifiers={[font({ size: 12, weight: 'semibold' }), foregroundStyle(c.accentText)]}>
-              Add a book to start →
-            </Text>
+            {text('Nothing in progress', 13, c.text, 'semibold')}
+            {text('Add a book to start →', 12, c.accentText, 'semibold')}
           </VStack>
         </Link>
       )}
@@ -411,13 +361,11 @@ const ReadingWidget = (props: ReadingWidgetProps, environment: WidgetEnvironment
 
       <HStack spacing={6}>
         {todayChip()}
-        <Text modifiers={[font({ size: 11 }), foregroundStyle(c.textMuted)]}>{props.today.value}</Text>
+        {text(props.today.value, 11, c.textMuted)}
         <Spacer />
         {props.current ? (
           <Link destination={props.current.timerUrl}>
-            <Text
-              modifiers={[font({ size: 12, weight: 'semibold' }), foregroundStyle(c.accentText)]}
-            >{`${actionLabel} →`}</Text>
+            {text(`${actionLabel} →`, 12, c.accentText, 'semibold')}
           </Link>
         ) : null}
       </HStack>

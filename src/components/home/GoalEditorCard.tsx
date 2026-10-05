@@ -1,7 +1,7 @@
 import { Minus, Plus } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { Card, IconButton, Text } from '@/components/ui';
+import { Card, IconButton, StatValue, Text } from '@/components/ui';
 import { goalPace, MAX_GOAL, MIN_GOAL } from '@/lib/goals';
 import { space } from '@/theme';
 import { useGoals } from '@/store/goals';
@@ -29,12 +29,12 @@ export function GoalEditorCard({ year }: { year: number }) {
           onPress={() => setGoal(year, value - 1)}
           disabled={value <= MIN_GOAL}
         />
-        <View style={styles.value} accessible accessibilityLabel={`${value} books this year`}>
-          <Text variant="stat">{value}</Text>
-          <Text variant="secondary" color="textMuted">
-            books this year
-          </Text>
-        </View>
+        <StatValue
+          value={value}
+          unit="books this year"
+          accessibilityLabel={`${value} books this year`}
+          style={styles.value}
+        />
         <IconButton
           icon={Plus}
           accessibilityLabel="Increase goal"
@@ -66,8 +66,5 @@ const styles = StyleSheet.create({
   },
   value: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: space[1] + 2,
   },
 });

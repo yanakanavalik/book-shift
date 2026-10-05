@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BookCover, Button, Text, TextField } from '@/components/ui';
 import { useNow } from '@/hooks/useNow';
 import { clampPage, type Book } from '@/lib/books';
+import { digitsOnly, pluralize } from '@/lib/format';
 import { elapsedMs, formatClock, isPaused, sessionMinutes, type ReadingSession } from '@/lib/sessions';
-import { dateKey } from '@/lib/streak';
-import { colors, radius, sizes, space } from '@/theme';
-import { useBooks } from '@/store/books';
+import { amountOn } from '@/lib/streak';
+import { colors, radius, space } from '@/theme';
+import { useBook, useBooks } from '@/store/books';
 import { useSessions } from '@/store/sessions';
 
 const COVER_WIDTH = 120;
@@ -21,12 +22,10 @@ export default function SessionScreen() {
   // Explicit insets: SafeAreaView can measure zero inside a freshly presented full-screen modal.
   const insets = useSafeAreaInsets();
   const safeArea = { paddingTop: insets.top + space[2], paddingBottom: insets.bottom + space[2] };
-  const { books } = useBooks();
   const { active, minutesLog, startSession, pause, resume } = useSessions();
+  const book = useBook(active?.bookId ?? bookParam);
   const [ending, setEnding] = useState(false);
   const now = useNow();
-
-  const book = books.find((b) => b.id === (active?.bookId ?? bookParam));
 
   useEffect(() => {
     if (!active && book && bookParam) startSession(book.id, book.currentPage);
@@ -36,13 +35,13 @@ export default function SessionScreen() {
     return (
       <View style={[styles.screen, styles.center, safeArea]}>
         <Text color="textMuted">No reading session is running.</Text>
-        <Button label="Close" variant="outline" size="sm" onPress={() => router.back()} style={styles.quiet} />
+        <Button label="Close" variant="subtle" size="sm" onPress={() => router.back()} />
       </View>
     );
   }
 
   const paused = isPaused(active);
-  const minutesToday = minutesLog[dateKey(now)] ?? 0;
+  const minutesToday = amountOn(minutesLog, now);
 
   const endSession = () => {
     pause();
@@ -57,7 +56,7 @@ export default function SessionScreen() {
   return (
     <View style={[styles.screen, safeArea]}>
       <View style={styles.header}>
-        <Button label="Minimize" variant="outline" size="sm" onPress={() => router.back()} style={styles.quiet} />
+        <Button label="Minimize" variant="subtle" size="sm" onPress={() => router.back()} />
         <Text variant="kicker" color="accentText">
           Reading session
         </Text>
@@ -95,7 +94,7 @@ export default function SessionScreen() {
         <View style={styles.actions}>
           <Button
             label={paused ? 'Resume' : 'Pause'}
-            variant="outline"
+            variant="subtle"
             onPress={paused ? resume : pause}
             style={[styles.action, styles.pause]}
           />
@@ -152,7 +151,7 @@ function EndSessionPanel({
         <View style={styles.pageRow}>
           <TextField
             value={pageInput}
-            onChangeText={(text) => setPageInput(text.replace(/[^0-9]/g, ''))}
+            onChangeText={(text) => setPageInput(digitsOnly(text))}
             keyboardType="number-pad"
             returnKeyType="done"
             selectTextOnFocus
@@ -165,12 +164,12 @@ function EndSessionPanel({
           </Text>
         </View>
         <Text variant="secondary" color="textMuted">
-          {minutes} min · {newPages > 0 ? `${newPages} new ${newPages === 1 ? 'page' : 'pages'}` : 'no new pages'}
+          {minutes} min · {newPages > 0 ? pluralize(newPages, 'new page') : 'no new pages'}
         </Text>
         <Button label="Save session" onPress={save} />
         <View style={styles.panelLinks}>
-          <Button label="Keep reading" variant="plain" onPress={onKeepReading} style={styles.textLink} />
-          <Button label="Discard session" variant="link" onPress={confirmDiscard} style={styles.textLink} />
+          <Button label="Keep reading" variant="plain" inline onPress={onKeepReading} />
+          <Button label="Discard session" variant="link" inline onPress={confirmDiscard} />
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -192,9 +191,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  quiet: {
-    borderColor: colors.outlineSubtle,
   },
   body: {
     flex: 1,
@@ -227,7 +223,6 @@ const styles = StyleSheet.create({
   },
   pause: {
     backgroundColor: colors.bg,
-    borderColor: colors.outlineSubtle,
   },
   panel: {
     backgroundColor: colors.bg,
@@ -246,10 +241,5 @@ const styles = StyleSheet.create({
   panelLinks: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  textLink: {
-    alignSelf: 'auto',
-    paddingHorizontal: 0,
-    height: sizes.controlHeightSmall,
   },
 });

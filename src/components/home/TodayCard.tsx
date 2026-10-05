@@ -2,9 +2,10 @@ import { router } from 'expo-router';
 import { Timer } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Card, Text } from '@/components/ui';
+import { Card, StatValue, Text } from '@/components/ui';
+import { pluralize } from '@/lib/format';
 import { isPaused } from '@/lib/sessions';
-import { dateKey } from '@/lib/streak';
+import { amountOn } from '@/lib/streak';
 import { colors, radius, sizes, space } from '@/theme';
 import { useBooks } from '@/store/books';
 import { useSessions } from '@/store/sessions';
@@ -13,16 +14,15 @@ import { useSessions } from '@/store/sessions';
 export function TodayCard({ now }: { now: Date }) {
   const { readingLog } = useBooks();
   const { active, minutesLog } = useSessions();
-  const key = dateKey(now);
-  const minutes = minutesLog[key] ?? 0;
-  const pages = readingLog[key] ?? 0;
+  const minutes = amountOn(minutesLog, now);
+  const pages = amountOn(readingLog, now);
 
   const note = active
     ? isPaused(active)
       ? 'session paused'
       : 'reading now'
     : pages > 0
-      ? `${pages} ${pages === 1 ? 'page' : 'pages'}`
+      ? pluralize(pages, 'page')
       : minutes > 0
         ? 'read today'
         : 'no reading yet';
@@ -42,12 +42,7 @@ export function TodayCard({ now }: { now: Date }) {
           <Text variant="kicker" color="steelText">
             Today
           </Text>
-          <View style={styles.value}>
-            <Text variant="sheetTitle">{minutes} min</Text>
-            <Text variant="secondary" color="textMuted">
-              {note}
-            </Text>
-          </View>
+          <StatValue variant="sheetTitle" value={`${minutes} min`} unit={note} accessibilityLabel={`${minutes} minutes, ${note}`} />
         </View>
       </Card>
     </Pressable>
@@ -71,10 +66,5 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     gap: 2,
-  },
-  value: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: space[1] + 2,
   },
 });

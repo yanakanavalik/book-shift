@@ -5,10 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CatalogSearch } from '@/components/add/CatalogSearch';
 import { EMPTY_DRAFT, ManualEntry, type ManualDraft } from '@/components/add/ManualEntry';
-import { Button, Chip, SegmentedControl, Text } from '@/components/ui';
-import type { BookStatus } from '@/lib/books';
+import { Chip, SegmentedControl, SheetGrabber, SheetHeader, Text } from '@/components/ui';
+import { STATUS_LABELS, type BookStatus } from '@/lib/books';
 import type { CatalogBook } from '@/lib/openLibrary';
-import { colors, radius, space } from '@/theme';
+import { colors, space } from '@/theme';
 import { useBooks } from '@/store/books';
 
 type Mode = 'search' | 'manual';
@@ -18,14 +18,7 @@ const MODES = [
   { value: 'manual', label: 'Enter manually' },
 ] as const;
 
-const STATUSES: { value: BookStatus; label: string }[] = [
-  { value: 'want-to-read', label: 'To read' },
-  { value: 'reading', label: 'Reading' },
-  { value: 'finished', label: 'Read' },
-];
-
-// iOS presents this screen as a page sheet over the previous screen; Android shows it full screen.
-const IS_SHEET = Platform.OS === 'ios';
+const STATUSES: BookStatus[] = ['want-to-read', 'reading', 'finished'];
 
 export default function AddBookScreen() {
   const { books, addBook } = useBooks();
@@ -66,14 +59,9 @@ export default function AddBookScreen() {
     // SafeAreaView measures its own native view: no top inset inside a sheet, status bar inset when full screen.
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {IS_SHEET ? <View style={styles.grabber} /> : null}
-
-        <View style={styles.header}>
-          <Text variant="sheetTitle" accessibilityRole="header">
-            Add a book
-          </Text>
-          <Button label="Cancel" variant="outline" size="sm" onPress={() => router.back()} />
-        </View>
+        {/* iOS presents this screen as a page sheet over the previous screen; Android shows it full screen. */}
+        <SheetGrabber />
+        <SheetHeader title="Add a book" action="Cancel" onAction={() => router.back()} />
 
         <SegmentedControl options={MODES} value={mode} onChange={setMode} />
 
@@ -81,12 +69,12 @@ export default function AddBookScreen() {
           <Text variant="secondary" color="textMuted">
             Add to
           </Text>
-          {STATUSES.map((option) => (
+          {STATUSES.map((value) => (
             <Chip
-              key={option.value}
-              label={option.label}
-              selected={status === option.value}
-              onPress={() => setStatus(option.value)}
+              key={value}
+              label={STATUS_LABELS[value]}
+              selected={status === value}
+              onPress={() => setStatus(value)}
             />
           ))}
         </View>
@@ -120,19 +108,6 @@ const styles = StyleSheet.create({
     paddingTop: space[2],
     paddingHorizontal: space[4],
     gap: space[3],
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: radius.pill,
-    backgroundColor: colors.track,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: space[2],
   },
   statusRow: {
     flexDirection: 'row',

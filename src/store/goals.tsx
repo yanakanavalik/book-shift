@@ -1,7 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 
 import { clampGoal, SUGGESTED_GOAL } from '@/lib/goals';
+
+import { createStoreContext, usePersistedState } from './persisted';
 
 const STORAGE_KEY = 'book-shift/goals/v1';
 
@@ -15,28 +16,11 @@ type GoalsContextValue = {
   setGoal: (year: number, goal: number) => void;
 };
 
-const GoalsContext = createContext<GoalsContextValue | null>(null);
+const [Provider, useGoals] = createStoreContext<GoalsContextValue>('Goals');
+export { useGoals };
 
 export function GoalsProvider({ children }: { children: ReactNode }) {
-  const [goals, setGoals] = useState<Goals>({});
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
-        if (raw) setGoals(JSON.parse(raw) as Goals);
-      })
-      .catch((error) => console.warn('Failed to load goals', error))
-      .finally(() => setLoaded(true));
-  }, []);
-
-  useEffect(() => {
-    // Don't overwrite stored data with the empty initial state before it has loaded.
-    if (!loaded) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(goals)).catch((error) =>
-      console.warn('Failed to save goals', error),
-    );
-  }, [goals, loaded]);
+  const [goals, setGoals, loaded] = usePersistedState<Goals>(STORAGE_KEY, {}, 'goals');
 
   const goalFor = useCallback(
     (year: number) => {
@@ -46,17 +30,12 @@ export function GoalsProvider({ children }: { children: ReactNode }) {
     [goals],
   );
 
-  const setGoal = useCallback((year: number, goal: number) => {
-    setGoals((prev) => ({ ...prev, [year]: clampGoal(goal) }));
-  }, []);
+  const setGoal = useCallback(
+    (year: number, goal: number) => setGoals((prev) => ({ ...prev, [year]: clampGoal(goal) })),
+    [setGoals],
+  );
 
   const value = useMemo(() => ({ loaded, goalFor, setGoal }), [loaded, goalFor, setGoal]);
 
-  return <GoalsContext.Provider value={value}>{children}</GoalsContext.Provider>;
-}
-
-export function useGoals(): GoalsContextValue {
-  const context = useContext(GoalsContext);
-  if (!context) throw new Error('useGoals must be used inside <GoalsProvider>');
-  return context;
+  return <Provider value={value}>{children}</Provider>;
 }

@@ -41,3 +41,6 @@ export const sizes = {
   icon: 20,
   iconStroke: 2,
 } as const;
+
+/** Extra touch area around small (36) controls so they still meet the 44 minimum. */
+export const smallControlHitSlop = (sizes.minTouch - sizes.controlHeightSmall) / 2;

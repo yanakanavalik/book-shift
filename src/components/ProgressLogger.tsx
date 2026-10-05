@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button, SegmentedControl, Text, TextField } from '@/components/ui';
 import { progressPercent, targetPage, type Book, type ProgressInputMode } from '@/lib/books';
+import { digitsOnly } from '@/lib/format';
 import { colors, sizes, space } from '@/theme';
 import { useBooks } from '@/store/books';
 
@@ -46,7 +47,7 @@ export function ProgressLogger({ book, onSaved, onCancel, autoFocus, tone = 'ins
         <TextField
           tone={tone}
           value={input}
-          onChangeText={(text) => setInput(text.replace(/[^0-9]/g, ''))}
+          onChangeText={(text) => setInput(digitsOnly(text))}
           placeholder={mode === 'pages-read' ? 'Pages' : 'Page'}
           keyboardType="number-pad"
           returnKeyType="done"
@@ -71,7 +72,7 @@ export function ProgressLogger({ book, onSaved, onCancel, autoFocus, tone = 'ins
               </>
             ) : null}
           </View>
-          {onCancel ? <Button label="Cancel" variant="link" onPress={onCancel} style={styles.cancel} /> : null}
+          {onCancel ? <Button label="Cancel" variant="link" inline onPress={onCancel} /> : null}
         </View>
       ) : null}
     </View>
@@ -100,10 +101,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[1],
-  },
-  cancel: {
-    alignSelf: 'auto',
-    paddingHorizontal: 0,
-    height: sizes.controlHeightSmall,
   },
 });

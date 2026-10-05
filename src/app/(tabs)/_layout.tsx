@@ -4,6 +4,8 @@ import { SessionAccessory } from '@/components/SessionChip';
 import { colors } from '@/theme';
 import { useSessions } from '@/store/sessions';
 
+const contentStyle = { backgroundColor: colors.bg };
+
 // The system tab bar: Liquid Glass on iOS 26+, Material 3 bottom navigation on Android.
 // On iOS 26 the glass background comes from the content behind it, so only colors are set here.
 export default function TabsLayout() {
@@ -22,14 +24,14 @@ export default function TabsLayout() {
           <SessionAccessory />
         </NativeTabs.BottomAccessory>
       ) : null}
-      <NativeTabs.Trigger name="index" contentStyle={{ backgroundColor: colors.bg }}>
+      <NativeTabs.Trigger name="index" contentStyle={contentStyle}>
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'house', selected: 'house.fill' }}
           md={{ default: 'home', selected: 'home_filled' }}
         />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="books" contentStyle={{ backgroundColor: colors.bg }}>
+      <NativeTabs.Trigger name="books" contentStyle={contentStyle}>
         <NativeTabs.Trigger.Label>My books</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf={{ default: 'books.vertical', selected: 'books.vertical.fill' }}

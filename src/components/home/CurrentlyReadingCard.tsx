@@ -3,10 +3,12 @@ import { Timer } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { BookProgress } from '@/components/BookProgress';
 import { ProgressLogger } from '@/components/ProgressLogger';
-import { BookCover, Button, Card, IconButton, ProgressBar, Text } from '@/components/ui';
-import { progressPercent, type Book } from '@/lib/books';
-import { colors, space } from '@/theme';
+import { BookCover, Button, Card, IconButton, Text } from '@/components/ui';
+import type { Book } from '@/lib/books';
+import { bookHref } from '@/lib/routes';
+import { space } from '@/theme';
 import { useBooks } from '@/store/books';
 import { useSessions } from '@/store/sessions';
 
@@ -17,7 +19,6 @@ export function CurrentlyReadingCard({ book }: { book: Book }) {
   const { finishBook } = useBooks();
   const { active, startSession } = useSessions();
   const [logging, setLogging] = useState(false);
-  const percent = progressPercent(book);
   const timing = active?.bookId === book.id;
 
   const openTimer = () => {
@@ -28,7 +29,7 @@ export function CurrentlyReadingCard({ book }: { book: Book }) {
   return (
     <Card>
       <View style={styles.top}>
-        <Link href={{ pathname: '/book/[id]', params: { id: book.id } }} asChild>
+        <Link href={bookHref(book.id)} asChild>
           <Pressable accessibilityLabel={`Open ${book.title}`}>
             <BookCover
               title={book.title}
@@ -61,15 +62,7 @@ export function CurrentlyReadingCard({ book }: { book: Book }) {
             />
           </View>
 
-          <View style={styles.progress}>
-            <View style={styles.progressLabels}>
-              <Text variant="secondary" color="textMuted">
-                p. {book.currentPage} / {book.totalPages}
-              </Text>
-              <Text variant="label">{percent}%</Text>
-            </View>
-            <ProgressBar percent={percent} />
-          </View>
+          <BookProgress book={book} />
 
           {logging ? (
             <ProgressLogger
@@ -83,11 +76,11 @@ export function CurrentlyReadingCard({ book }: { book: Book }) {
               <Button label="Log pages" size="md" onPress={() => setLogging(true)} style={styles.action} />
               <Button
                 label="Finished"
-                variant="outline"
+                variant="subtle"
                 size="md"
                 onPress={() => finishBook(book.id)}
                 accessibilityLabel={`Mark ${book.title} as finished`}
-                style={[styles.action, styles.finished]}
+                style={styles.action}
               />
             </View>
           )}
@@ -115,14 +108,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: space[1],
   },
-  progress: {
-    gap: space[1] + 2,
-  },
-  progressLabels: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
   actions: {
     flexDirection: 'row',
     gap: space[2],
@@ -130,8 +115,5 @@ const styles = StyleSheet.create({
   action: {
     flex: 1,
     paddingHorizontal: space[2],
-  },
-  finished: {
-    borderColor: colors.outlineSubtle,
   },
 });

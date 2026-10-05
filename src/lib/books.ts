@@ -1,5 +1,11 @@
 export type BookStatus = 'want-to-read' | 'reading' | 'finished';
 
+export const STATUS_LABELS: Record<BookStatus, string> = {
+  'want-to-read': 'To read',
+  reading: 'Reading',
+  finished: 'Read',
+};
+
 export type Book = {
   id: string;
   title: string;
@@ -103,6 +109,11 @@ export function filterBooks(books: Book[], filter: BookFilter, query: string): B
     .filter((book) => filter === 'all' || bookStatus(book) === filter)
     .filter((book) => !needle || normalize(`${book.title} ${book.author}`).includes(needle))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+/** Books with one status, newest activity first. */
+export function booksWithStatus(books: Book[], status: BookStatus): Book[] {
+  return filterBooks(books, status, '');
 }
 
 export function countByStatus(books: Book[]): Record<BookFilter, number> {

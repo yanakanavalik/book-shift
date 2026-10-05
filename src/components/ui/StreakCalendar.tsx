@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { pluralize } from '@/lib/format';
 import type { StreakDay } from '@/lib/streak';
 import { radius, space } from '@/theme';
 
@@ -17,7 +18,7 @@ export function StreakCalendar({ days }: { days: StreakDay[] }) {
     <View
       style={styles.grid}
       accessible
-      accessibilityLabel={`Last ${weeks.length} weeks: read on ${read} ${read === 1 ? 'day' : 'days'}. ${
+      accessibilityLabel={`Last ${weeks.length} weeks: read on ${pluralize(read, 'day')}. ${
         days.includes('todayRead') ? 'Read today.' : 'Not read today yet.'
       }`}
     >

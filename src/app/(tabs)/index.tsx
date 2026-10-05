@@ -12,8 +12,9 @@ import { TodayCard } from '@/components/home/TodayCard';
 import { SessionChipOverlay } from '@/components/SessionChip';
 import { useTabScreenPadding } from '@/components/tabScreen';
 import { LinkButton, Text } from '@/components/ui';
-import { bookStatus } from '@/lib/books';
+import { booksWithStatus } from '@/lib/books';
 import { formatLongDate, greeting } from '@/lib/dates';
+import { pad2 } from '@/lib/format';
 import { space } from '@/theme';
 import { useBooks } from '@/store/books';
 
@@ -21,6 +22,7 @@ export default function HomeScreen() {
   const padding = useTabScreenPadding();
   const { books } = useBooks();
   const now = new Date();
+  const year = now.getFullYear();
 
   return (
     <>
@@ -37,14 +39,14 @@ export default function HomeScreen() {
         {books.length === 0 ? (
           <>
             <EmptyShelfCard />
-            <GoalEditorCard year={now.getFullYear()} />
+            <GoalEditorCard year={year} />
             <StreakCard />
           </>
         ) : (
           <>
             <CurrentlyReading />
             <View style={styles.statsRow}>
-              <GoalSummaryCard year={now.getFullYear()} />
+              <GoalSummaryCard year={year} />
               <StreakSummaryCard now={now} />
             </View>
             <TodayCard now={now} />
@@ -59,16 +61,14 @@ export default function HomeScreen() {
 
 function CurrentlyReading() {
   const { books } = useBooks();
-  const reading = books
-    .filter((book) => bookStatus(book) === 'reading')
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const reading = booksWithStatus(books, 'reading');
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text variant="kicker">Currently reading</Text>
         <Text variant="kicker" accessibilityLabel={`${reading.length} books`}>
-          {String(reading.length).padStart(2, '0')}
+          {pad2(reading.length)}
         </Text>
       </View>
       {reading.length > 0 ? (

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 
 import { BookCover, Button, Text, TextField } from '@/components/ui';
+import { joinMeta } from '@/lib/format';
 import { searchCatalog, type CatalogBook } from '@/lib/openLibrary';
 import { colors, radius, space } from '@/theme';
 
@@ -76,7 +77,7 @@ export function CatalogSearch({ isAdded, onAdd }: CatalogSearchProps) {
 }
 
 function ResultRow({ book, added, onAdd }: { book: CatalogBook; added: boolean; onAdd: () => void }) {
-  const meta = [book.author, book.year, book.pages ? `${book.pages} pp` : null].filter(Boolean).join(' · ');
+  const meta = joinMeta(book.author, book.year, book.pages && `${book.pages} pp`);
   return (
     <View style={styles.row}>
       <BookCover title={book.title} coverUrl={book.coverUrl} seed={book.key} width={40} />

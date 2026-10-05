@@ -3,11 +3,14 @@ import { useEffect, useState } from 'react';
 import { Alert, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BookProgress } from '@/components/BookProgress';
 import { ProgressLogger } from '@/components/ProgressLogger';
-import { BookCover, Button, Card, ProgressBar, StatusBadge, Text, TextField } from '@/components/ui';
-import { bookStatus, progressPercent, type Book } from '@/lib/books';
+import { BookCover, Button, Card, SheetGrabber, StatusBadge, Text, TextField } from '@/components/ui';
+import { bookStatus, type Book } from '@/lib/books';
+import { formatDate } from '@/lib/dates';
+import { digitsOnly, joinMeta } from '@/lib/format';
 import { colors, radius, space } from '@/theme';
-import { useBooks } from '@/store/books';
+import { useBook, useBooks } from '@/store/books';
 
 const COVER_WIDTH = 96;
 
@@ -15,8 +18,8 @@ const COVER_WIDTH = 96;
 export default function BookSheet() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const { books, removeBook, markOpened } = useBooks();
-  const book = books.find((b) => b.id === id);
+  const { removeBook, markOpened } = useBooks();
+  const book = useBook(id);
   const found = !!book;
 
   // The small widget shows the book opened last.
@@ -53,7 +56,7 @@ export default function BookSheet() {
 
   return (
     <View style={sheetStyle}>
-      {Platform.OS === 'ios' ? <View style={styles.grabber} /> : null}
+      <SheetGrabber style={styles.grabber} />
 
       <View style={styles.header}>
         <BookCover title={book.title} author={book.author} coverUrl={book.coverUrl} seed={book.id} width={COVER_WIDTH} />
@@ -63,7 +66,7 @@ export default function BookSheet() {
             {book.title}
           </Text>
           <Text variant="secondary" color="textMuted">
-            {[book.author, `${book.totalPages} pp`].filter(Boolean).join(' · ')}
+            {joinMeta(book.author, `${book.totalPages} pp`)}
           </Text>
           <Text variant="secondary" color="textMuted" style={styles.description}>
             {describe(book)}
@@ -74,7 +77,7 @@ export default function BookSheet() {
       {status === 'want-to-read' ? <StartReading book={book} /> : null}
       {status === 'reading' ? <InProgress book={book} /> : null}
 
-      <Button label="Remove from list" variant="outline" onPress={confirmRemove} style={styles.remove} />
+      <Button label="Remove from list" variant="subtle" onPress={confirmRemove} />
     </View>
   );
 }
@@ -100,7 +103,7 @@ function StartReading({ book }: { book: Book }) {
         <TextField
           tone="inset"
           value={startPage}
-          onChangeText={(text) => setStartPage(text.replace(/[^0-9]/g, ''))}
+          onChangeText={(text) => setStartPage(digitsOnly(text))}
           placeholder="0"
           keyboardType="number-pad"
           returnKeyType="done"
@@ -117,18 +120,11 @@ function StartReading({ book }: { book: Book }) {
 
 function InProgress({ book }: { book: Book }) {
   const { finishBook } = useBooks();
-  const percent = progressPercent(book);
 
   return (
     <>
       <Card style={styles.progressCard}>
-        <View style={styles.progressLabels}>
-          <Text variant="secondary" color="textMuted">
-            p. {book.currentPage} / {book.totalPages}
-          </Text>
-          <Text variant="label">{percent}%</Text>
-        </View>
-        <ProgressBar percent={percent} />
+        <BookProgress book={book} />
         <ProgressLogger book={book} />
       </Card>
       <Button label="Mark as read" onPress={() => finishBook(book.id)} />
@@ -143,9 +139,7 @@ function describe(book: Book): string {
     case 'reading':
       return `${book.totalPages - book.currentPage} pages to go`;
     case 'finished':
-      return book.finishedAt
-        ? `Finished ${new Date(book.finishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
-        : 'Finished';
+      return book.finishedAt ? `Finished ${formatDate(new Date(book.finishedAt))}` : 'Finished';
   }
 }
 
@@ -157,11 +151,6 @@ const styles = StyleSheet.create({
     gap: space[3],
   },
   grabber: {
-    alignSelf: 'center',
-    width: 40,
-    height: 5,
-    borderRadius: radius.pill,
-    backgroundColor: colors.track,
     marginBottom: space[2],
   },
   header: {
@@ -194,13 +183,5 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     gap: space[2],
-  },
-  progressLabels: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-  },
-  remove: {
-    borderColor: colors.outlineSubtle,
   },
 });

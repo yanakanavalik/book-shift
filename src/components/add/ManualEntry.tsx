@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { Button, Text, TextField } from '@/components/ui';
 import type { NewBook } from '@/lib/books';
+import { digitsOnly } from '@/lib/format';
 import { space } from '@/theme';
 
 export type ManualDraft = {
@@ -67,7 +68,7 @@ export function ManualEntry({ initialDraft, onSubmit }: ManualEntryProps) {
       <TextField
         label="Total pages"
         value={draft.pages}
-        onChangeText={(text) => update({ pages: text.replace(/[^0-9]/g, '') })}
+        onChangeText={(text) => update({ pages: digitsOnly(text) })}
         placeholder="e.g. 340"
         keyboardType="number-pad"
         autoFocus={focusPages}

@@ -8,7 +8,7 @@ import { BooksProvider, useBooks } from '@/store/books';
 import { GoalsProvider, useGoals } from '@/store/goals';
 import { OnboardingProvider, useOnboarding } from '@/store/onboarding';
 import { SessionsProvider, useSessions } from '@/store/sessions';
-import { colors, fontAssets, fonts, radius } from '@/theme';
+import { colors, fontAssets, radius } from '@/theme';
 import { useWidgetSync } from '@/widgets/useWidgetSync';
 
 SplashScreen.preventAutoHideAsync();
@@ -18,8 +18,6 @@ const sheetOptions = {
   sheetAllowedDetents: 'fitToContents',
   sheetCornerRadius: radius.sheet,
   sheetGrabberVisible: false,
-  headerShown: false,
-  contentStyle: { backgroundColor: colors.bg },
 } as const;
 
 export default function RootLayout() {
@@ -55,32 +53,20 @@ function RootStack() {
   if (!ready) return null;
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
-        headerTintColor: colors.text,
-        headerTitleStyle: { fontFamily: fonts.semibold, color: colors.text },
-        headerBackButtonDisplayMode: 'minimal',
-        headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.bg },
-      }}
-    >
+    // Every screen draws its own title, so the native header is off throughout.
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Protected guard={!hasSeenWelcome}>
-        <Stack.Screen name="welcome" options={{ headerShown: false }} />
+        <Stack.Screen name="welcome" />
       </Stack.Protected>
       <Stack.Protected guard={hasSeenWelcome}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="add" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="goal" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="add" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="goal" options={{ presentation: 'modal' }} />
         {/* Native sheet (UISheetPresentationController on iOS), sized to its content. */}
         <Stack.Screen name="book/[id]" options={sheetOptions} />
         <Stack.Screen
           name="session"
-          options={{
-            presentation: 'fullScreenModal',
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.surfaceSteel },
-          }}
+          options={{ presentation: 'fullScreenModal', contentStyle: { backgroundColor: colors.surfaceSteel } }}
         />
       </Stack.Protected>
     </Stack>

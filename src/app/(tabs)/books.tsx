@@ -7,13 +7,15 @@ import { BookGridItem } from '@/components/BookGridItem';
 import { SessionChipOverlay } from '@/components/SessionChip';
 import { useTabScreenPadding } from '@/components/tabScreen';
 import { Button, SegmentedControl, Text, TextField } from '@/components/ui';
-import { countByStatus, filterBooks, type BookFilter } from '@/lib/books';
+import { countByStatus, filterBooks, STATUS_LABELS, type BookFilter } from '@/lib/books';
+import { pluralize } from '@/lib/format';
 import { space } from '@/theme';
 import { useBooks } from '@/store/books';
 
 const COLUMNS = 3;
 const SCREEN_EDGE = space[4];
 const COLUMN_GAP = space[3];
+const FILTERS: BookFilter[] = ['all', 'reading', 'finished', 'want-to-read'];
 
 export default function LibraryScreen() {
   const padding = useTabScreenPadding();
@@ -26,12 +28,11 @@ export default function LibraryScreen() {
   const visible = useMemo(() => filterBooks(books, filter, query), [books, filter, query]);
   const itemWidth = Math.floor((windowWidth - SCREEN_EDGE * 2 - COLUMN_GAP * (COLUMNS - 1)) / COLUMNS);
 
-  const filters = [
-    { value: 'all', label: 'All', count: counts.all },
-    { value: 'reading', label: 'Reading', count: counts.reading },
-    { value: 'finished', label: 'Read', count: counts.finished },
-    { value: 'want-to-read', label: 'To read', count: counts['want-to-read'] },
-  ] as const;
+  const filters = FILTERS.map((value) => ({
+    value,
+    label: value === 'all' ? 'All' : STATUS_LABELS[value],
+    count: counts[value],
+  }));
 
   return (
     <>
@@ -49,7 +50,7 @@ export default function LibraryScreen() {
             <View style={styles.titleRow}>
               <View style={styles.titles}>
                 <Text variant="kicker" color="accentText">
-                  {books.length} {books.length === 1 ? 'book' : 'books'}
+                  {pluralize(books.length, 'book')}
                 </Text>
                 <Text variant="screenTitle" accessibilityRole="header">
                   My books

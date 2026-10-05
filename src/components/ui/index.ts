@@ -7,6 +7,8 @@ export { IconButton, type IconButtonProps } from './IconButton';
 export { LinkButton } from './LinkButton';
 export { ProgressBar } from './ProgressBar';
 export { SegmentedControl, type SegmentedControlProps } from './SegmentedControl';
+export { SheetGrabber, SheetHeader } from './Sheet';
+export { StatValue, type StatValueProps } from './StatValue';
 export { StatusBadge } from './StatusBadge';
 export { StreakCalendar } from './StreakCalendar';
 export { StreakDots, type StreakDay } from './StreakDots';

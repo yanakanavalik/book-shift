@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet } from 'react-native';
 
-import { colors, radius, sizes, space } from '@/theme';
+import { colors, radius, sizes, smallControlHitSlop, space } from '@/theme';
 
 import { Text } from './Text';
 
@@ -17,7 +17,7 @@ export function Chip({ label, selected, onPress }: ChipProps) {
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       onPress={onPress}
-      hitSlop={(sizes.minTouch - sizes.controlHeightSmall) / 2}
+      hitSlop={smallControlHitSlop}
       style={({ pressed }) => [styles.chip, selected ? styles.selected : styles.unselected, pressed && styles.pressed]}
     >
       <Text variant="label" color={selected ? 'onSelected' : 'text'}>

@@ -2,14 +2,9 @@ import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BookCover, Text } from '@/components/ui';
-import { bookStatus, progressPercent, type Book, type BookStatus } from '@/lib/books';
+import { bookStatus, progressPercent, STATUS_LABELS, type Book } from '@/lib/books';
+import { bookHref } from '@/lib/routes';
 import { space } from '@/theme';
-
-export const STATUS_LABELS: Record<BookStatus, string> = {
-  'want-to-read': 'To read',
-  reading: 'Reading',
-  finished: 'Read',
-};
 
 /** Cover with title, status and length underneath; opens the book. */
 export function BookGridItem({ book, width }: { book: Book; width: number }) {
@@ -19,7 +14,7 @@ export function BookGridItem({ book, width }: { book: Book; width: number }) {
   // Width lives on a plain wrapper: `Link asChild` doesn't reliably forward function-style `style`.
   return (
     <View style={{ width }}>
-      <Link href={{ pathname: '/book/[id]', params: { id: book.id } }} asChild>
+      <Link href={bookHref(book.id)} asChild>
         <Pressable
           style={({ pressed }) => [styles.item, pressed && styles.pressed]}
           accessibilityLabel={`${book.title}${book.author ? ` by ${book.author}` : ''}, ${statusText}, ${book.totalPages} pages`}

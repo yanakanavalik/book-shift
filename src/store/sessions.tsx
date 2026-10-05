@@ -1,9 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 
 import {
   createSession,
-  logMinutes,
   normalizeSession,
   pauseSession,
   resumeSession,
@@ -11,10 +9,21 @@ import {
   type MinutesLog,
   type ReadingSession,
 } from '@/lib/sessions';
+import { addToDay } from '@/lib/streak';
+
+import { createStoreContext, usePersistedState } from './persisted';
 
 const STORAGE_KEY = 'book-shift/sessions/v1';
 
 type Stored = { active: ReadingSession | null; minutesLog: MinutesLog };
+
+const storedSessions = {
+  decode: (raw: string): Stored => {
+    const stored = JSON.parse(raw) as Stored;
+    return { ...stored, active: stored.active ? normalizeSession(stored.active) : null };
+  },
+  encode: (state: Stored) => JSON.stringify(state),
+};
 
 type SessionsContextValue = {
   loaded: boolean;
@@ -31,58 +40,51 @@ type SessionsContextValue = {
   discardSession: () => void;
 };
 
-const SessionsContext = createContext<SessionsContextValue | null>(null);
+const [Provider, useSessions] = createStoreContext<SessionsContextValue>('Sessions');
+export { useSessions };
+
+/** Credits a session's minutes to the day it ends. */
+function credit(log: MinutesLog, session: ReadingSession | null, now: Date): MinutesLog {
+  return session ? addToDay(log, sessionMinutes(session, now), now) : log;
+}
 
 export function SessionsProvider({ children }: { children: ReactNode }) {
-  const [loaded, setLoaded] = useState(false);
-  const [state, setState] = useState<Stored>({ active: null, minutesLog: {} });
+  const [state, setState, loaded] = usePersistedState<Stored>(
+    STORAGE_KEY,
+    { active: null, minutesLog: {} },
+    'reading sessions',
+    storedSessions,
+  );
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
-        if (!raw) return;
-        const stored = JSON.parse(raw) as Stored;
-        setState({ ...stored, active: stored.active ? normalizeSession(stored.active) : null });
-      })
-      .catch((error) => console.warn('Failed to load reading sessions', error))
-      .finally(() => setLoaded(true));
-  }, []);
+  const updateActive = useCallback(
+    (update: (session: ReadingSession, now: Date) => ReadingSession) =>
+      setState((prev) => (prev.active ? { ...prev, active: update(prev.active, new Date()) } : prev)),
+    [setState],
+  );
 
-  useEffect(() => {
-    // Don't overwrite stored data with the empty initial state before it has loaded.
-    if (!loaded) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch((error) =>
-      console.warn('Failed to save reading sessions', error),
-    );
-  }, [state, loaded]);
+  const startSession = useCallback(
+    (bookId: string, startPage: number) => {
+      const now = new Date();
+      setState((prev) => ({
+        active: createSession(bookId, startPage, now),
+        minutesLog: credit(prev.minutesLog, prev.active, now),
+      }));
+    },
+    [setState],
+  );
 
-  const startSession = useCallback((bookId: string, startPage: number) => {
-    const now = new Date();
-    setState((prev) => ({
-      active: createSession(bookId, startPage, now),
-      minutesLog: prev.active ? logMinutes(prev.minutesLog, sessionMinutes(prev.active, now), now) : prev.minutesLog,
-    }));
-  }, []);
-
-  const pause = useCallback(() => {
-    setState((prev) => (prev.active ? { ...prev, active: pauseSession(prev.active, new Date()) } : prev));
-  }, []);
-
-  const resume = useCallback(() => {
-    setState((prev) => (prev.active ? { ...prev, active: resumeSession(prev.active, new Date()) } : prev));
-  }, []);
+  const pause = useCallback(() => updateActive(pauseSession), [updateActive]);
+  const resume = useCallback(() => updateActive(resumeSession), [updateActive]);
 
   const finishSession = useCallback(() => {
     if (!state.active) return 0;
     const now = new Date();
     const minutes = sessionMinutes(state.active, now);
-    setState((prev) => ({ active: null, minutesLog: logMinutes(prev.minutesLog, minutes, now) }));
+    setState((prev) => ({ active: null, minutesLog: credit(prev.minutesLog, prev.active, now) }));
     return minutes;
-  }, [state.active]);
+  }, [state.active, setState]);
 
-  const discardSession = useCallback(() => {
-    setState((prev) => ({ ...prev, active: null }));
-  }, []);
+  const discardSession = useCallback(() => setState((prev) => ({ ...prev, active: null })), [setState]);
 
   const value = useMemo(
     () => ({
@@ -98,11 +100,5 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
     [loaded, state, startSession, pause, resume, finishSession, discardSession],
   );
 
-  return <SessionsContext.Provider value={value}>{children}</SessionsContext.Provider>;
-}
-
-export function useSessions(): SessionsContextValue {
-  const context = useContext(SessionsContext);
-  if (!context) throw new Error('useSessions must be used inside <SessionsProvider>');
-  return context;
+  return <Provider value={value}>{children}</Provider>;
 }

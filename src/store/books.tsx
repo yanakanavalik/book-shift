@@ -1,5 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 
 import {
   clampPage,
@@ -10,11 +9,16 @@ import {
   type Book,
   type NewBook,
 } from '@/lib/books';
-import { logPages, type ReadingLog } from '@/lib/streak';
+import { addToDay, type ReadingLog } from '@/lib/streak';
+
+import { createStoreContext, usePersistedState } from './persisted';
 
 const STORAGE_KEY = 'book-shift/books/v1';
 const LOG_STORAGE_KEY = 'book-shift/reading-log/v1';
 const LAST_OPENED_STORAGE_KEY = 'book-shift/last-opened/v1';
+
+// Stored as the bare id, not JSON.
+const rawId = { decode: (raw: string) => raw, encode: (id: string | null) => id };
 
 type BooksContextValue = {
   books: Book[];
@@ -33,45 +37,33 @@ type BooksContextValue = {
   markOpened: (id: string) => void;
 };
 
-const BooksContext = createContext<BooksContextValue | null>(null);
+const [Provider, useBooks] = createStoreContext<BooksContextValue>('Books');
+export { useBooks };
 
 export function BooksProvider({ children }: { children: ReactNode }) {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [readingLog, setReadingLog] = useState<ReadingLog>({});
-  const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [books, setBooks, booksLoaded] = usePersistedState<Book[]>(STORAGE_KEY, [], 'books');
+  const [readingLog, setReadingLog, logLoaded] = usePersistedState<ReadingLog>(LOG_STORAGE_KEY, {}, 'reading log');
+  const [lastOpenedId, setLastOpenedId, lastOpenedLoaded] = usePersistedState<string | null>(
+    LAST_OPENED_STORAGE_KEY,
+    null,
+    'last opened book',
+    rawId,
+  );
+  const loaded = booksLoaded && logLoaded && lastOpenedLoaded;
 
-  useEffect(() => {
-    AsyncStorage.multiGet([STORAGE_KEY, LOG_STORAGE_KEY, LAST_OPENED_STORAGE_KEY])
-      .then(([[, rawBooks], [, rawLog], [, lastOpened]]) => {
-        if (rawBooks) setBooks(JSON.parse(rawBooks) as Book[]);
-        if (rawLog) setReadingLog(JSON.parse(rawLog) as ReadingLog);
-        setLastOpenedId(lastOpened);
-      })
-      .catch((error) => console.warn('Failed to load books', error))
-      .finally(() => setLoaded(true));
-  }, []);
+  const updateBook = useCallback(
+    (id: string, update: (book: Book) => Book) => setBooks((prev) => prev.map((b) => (b.id === id ? update(b) : b))),
+    [setBooks],
+  );
 
-  // Don't overwrite stored data with the empty initial state before it has loaded.
-  useEffect(() => {
-    if (!loaded) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(books)).catch((error) =>
-      console.warn('Failed to save books', error),
-    );
-  }, [books, loaded]);
-
-  useEffect(() => {
-    if (!loaded) return;
-    AsyncStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(readingLog)).catch((error) =>
-      console.warn('Failed to save reading log', error),
-    );
-  }, [readingLog, loaded]);
-
-  const addBook = useCallback<BooksContextValue['addBook']>((input) => {
-    const book = createBook(input);
-    setBooks((prev) => [book, ...prev]);
-    return book;
-  }, []);
+  const addBook = useCallback<BooksContextValue['addBook']>(
+    (input) => {
+      const book = createBook(input);
+      setBooks((prev) => [book, ...prev]);
+      return book;
+    },
+    [setBooks],
+  );
 
   const updateProgress = useCallback(
     (id: string, page: number) => {
@@ -79,30 +71,23 @@ export function BooksProvider({ children }: { children: ReactNode }) {
       if (!book) return;
       // Only forward progress counts as reading; corrections backwards don't un-log a day.
       const pagesRead = clampPage(page, book.totalPages) - book.currentPage;
-      setBooks((prev) => prev.map((b) => (b.id === id ? withCurrentPage(b, page) : b)));
-      if (pagesRead > 0) setReadingLog((prev) => logPages(prev, pagesRead, new Date()));
+      updateBook(id, (b) => withCurrentPage(b, page));
+      if (pagesRead > 0) setReadingLog((prev) => addToDay(prev, pagesRead, new Date()));
     },
-    [books],
+    [books, updateBook, setReadingLog],
   );
 
-  const startBook = useCallback((id: string, startPage = 0) => {
-    setBooks((prev) => prev.map((b) => (b.id === id ? startReading(b, startPage) : b)));
-  }, []);
+  const startBook = useCallback(
+    (id: string, startPage = 0) => updateBook(id, (b) => startReading(b, startPage)),
+    [updateBook],
+  );
 
-  const finishBook = useCallback((id: string) => {
-    setBooks((prev) => prev.map((b) => (b.id === id ? finishReading(b) : b)));
-  }, []);
+  const finishBook = useCallback((id: string) => updateBook(id, finishReading), [updateBook]);
 
-  const markOpened = useCallback((id: string) => {
-    setLastOpenedId(id);
-    AsyncStorage.setItem(LAST_OPENED_STORAGE_KEY, id).catch((error) =>
-      console.warn('Failed to save last opened book', error),
-    );
-  }, []);
-
-  const removeBook = useCallback((id: string) => {
-    setBooks((prev) => prev.filter((book) => book.id !== id));
-  }, []);
+  const removeBook = useCallback(
+    (id: string) => setBooks((prev) => prev.filter((book) => book.id !== id)),
+    [setBooks],
+  );
 
   const value = useMemo(
     () => ({
@@ -115,16 +100,16 @@ export function BooksProvider({ children }: { children: ReactNode }) {
       startBook,
       finishBook,
       removeBook,
-      markOpened,
+      markOpened: setLastOpenedId,
     }),
-    [books, readingLog, lastOpenedId, loaded, addBook, updateProgress, startBook, finishBook, removeBook, markOpened],
+    [books, readingLog, lastOpenedId, loaded, addBook, updateProgress, startBook, finishBook, removeBook, setLastOpenedId],
   );
 
-  return <BooksContext.Provider value={value}>{children}</BooksContext.Provider>;
+  return <Provider value={value}>{children}</Provider>;
 }
 
-export function useBooks(): BooksContextValue {
-  const context = useContext(BooksContext);
-  if (!context) throw new Error('useBooks must be used inside <BooksProvider>');
-  return context;
+/** A book by id, or undefined if it isn't in the library. */
+export function useBook(id: string | undefined): Book | undefined {
+  const { books } = useBooks();
+  return id ? books.find((book) => book.id === id) : undefined;
 }

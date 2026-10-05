@@ -1,15 +1,15 @@
 import { StyleSheet, View } from 'react-native';
 
-import type { BookStatus } from '@/lib/books';
+import { STATUS_LABELS, type BookStatus } from '@/lib/books';
 import { colors, radius, space, type ColorToken } from '@/theme';
 
 import { Text } from './Text';
 
-const BADGES: Record<BookStatus, { label: string; background: string; text: ColorToken }> = {
+const BADGES: Record<BookStatus, { background: string; text: ColorToken }> = {
   // Steel marks "To read"; cinnamon text for books in progress.
-  'want-to-read': { label: 'To read', background: colors.surfaceSteel, text: 'steelText' },
-  reading: { label: 'Reading', background: colors.surface, text: 'accentText' },
-  finished: { label: 'Read', background: colors.surface, text: 'text' },
+  'want-to-read': { background: colors.surfaceSteel, text: 'steelText' },
+  reading: { background: colors.surface, text: 'accentText' },
+  finished: { background: colors.surface, text: 'text' },
 };
 
 export function StatusBadge({ status }: { status: BookStatus }) {
@@ -17,7 +17,7 @@ export function StatusBadge({ status }: { status: BookStatus }) {
   return (
     <View style={[styles.badge, { backgroundColor: badge.background }]}>
       <Text variant="kicker" color={badge.text}>
-        {badge.label}
+        {STATUS_LABELS[status]}
       </Text>
     </View>
   );
